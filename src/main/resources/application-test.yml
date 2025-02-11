@@ -1,0 +1,20 @@
+server:
+  port: 9991
+
+spring:
+  config:
+    activate:
+      on-profile: test
+  datasource:
+    url: jdbc:mysql://localhost:3306/food_app
+    username: root
+    password: 25092004chien
+  jpa:
+    hibernate.ddl-auto: update
+    show-sql: true
+openapi:
+  service:
+    api-docs: foodApp-service
+    server: http://localhost:9991
+    title: Food App Service
+    version: 1.0.0

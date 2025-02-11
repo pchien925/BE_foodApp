@@ -1,0 +1,42 @@
+server:
+  port: 9990
+
+spring:
+  config:
+    activate:
+      on-profile: dev
+  datasource:
+    url: jdbc:mysql://localhost:3306/food_app
+    username: root
+    password: 25092004chien
+    driver-class-name: com.mysql.cj.jdbc.Driver
+  jpa:
+    hibernate:
+     ddl-auto: update
+    show-sql: true
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.MySQL8Dialect
+        format_sql: true
+  mail:
+    host: smtp.gmail.com
+    port: 587
+    username: phamchien9254@gmail.com
+    password: ubur aumm ogch ganm
+    properties:
+        mail:
+            smtp:
+              auth: true
+              starttls:
+                  enable: true
+                  required: true
+openapi:
+  service:
+    api-docs: food-app
+    server: http://localhost:9990
+    title: Food app service
+    version: 1.0.0
+jwt:
+  expiryHour: 1
+  expiryDay: 14
+  accessKey: bNg5ITJ8MjZGOlrQPLTOikaJI1WZqnhwrI3eypbGjyQ=

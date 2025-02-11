@@ -1,0 +1,8 @@
+server:
+  port: 9992
+
+spring:
+  config:
+    activate:
+      on-profile: prod
+
