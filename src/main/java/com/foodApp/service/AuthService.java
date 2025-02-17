@@ -9,4 +9,8 @@ public interface AuthService {
     TokenResponse authenticate(SignInRequest signInRequest);
 
     UserResponse register(RegisterRequest request);
+
+    String activate(String token);
+
+    String forgotPassword(String email);
 }

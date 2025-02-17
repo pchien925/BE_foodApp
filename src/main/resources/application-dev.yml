@@ -40,3 +40,6 @@ jwt:
   expiryHour: 1
   expiryDay: 14
   accessKey: bNg5ITJ8MjZGOlrQPLTOikaJI1WZqnhwrI3eypbGjyQ=
+  refreshKey: 9k1jJAWAKQCnCEz1pwcPNegbHoLugf9hgEnn6sz5pFc=
+  verificationKey: s+E3RRAIKn1Kcb5iWDsKtcV7r6g0omm7wHgdVkIyGtgA
+  resetKey: FsWyO8iaNYbbs0sPDeSjWpJtL45yVIkmFIcnqC2VUmmB

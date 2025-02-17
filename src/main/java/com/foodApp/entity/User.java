@@ -37,8 +37,6 @@ public class User extends AbstractEntity<Long> implements UserDetails, Serializa
 
     private String status;
 
-    private Integer verificationCode;
-
     @Override
     @Transient
     public Collection<? extends GrantedAuthority> getAuthorities() {

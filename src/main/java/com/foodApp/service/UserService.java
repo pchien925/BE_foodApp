@@ -1,6 +1,7 @@
 package com.foodApp.service;
 
 import com.foodApp.dto.request.UserRequestDTO;
+import com.foodApp.dto.response.UserResponse;
 
 public interface UserService {
 
@@ -8,5 +9,5 @@ public interface UserService {
 
     void updateStatus(long userId, String status);
 
-    void verifyUser(String username, Integer verificationCode);
+    UserResponse findById(long userId);
 }

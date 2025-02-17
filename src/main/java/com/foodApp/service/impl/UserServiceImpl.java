@@ -1,12 +1,13 @@
 package com.foodApp.service.impl;
 
 import com.foodApp.dto.request.UserRequestDTO;
+import com.foodApp.dto.response.UserResponse;
 import com.foodApp.entity.User;
 import com.foodApp.exception.DuplicatedException;
 import com.foodApp.exception.ResourceNotFoundException;
+import com.foodApp.mapper.UserMapper;
 import com.foodApp.repository.UserRepository;
 import com.foodApp.service.UserService;
-import com.foodApp.util.UserStatus;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -18,6 +19,7 @@ import org.springframework.stereotype.Service;
 public class UserServiceImpl implements UserService {
     private final PasswordEncoder passwordEncoder;
     private final UserRepository userRepository;
+    private final UserMapper userMapper;
 
     @Override
     public Long create(UserRequestDTO request){
@@ -46,12 +48,9 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
-    public void verifyUser(String username, Integer verificationCode){
-        if (!userRepository.existsByUsernameAndVerificationCode(username, verificationCode)){
-            throw new ResourceNotFoundException("Invalid verification code");
-        }
-        User user = userRepository.findByUsername(username).orElseThrow(() -> new ResourceNotFoundException("User not found"));
-        user.setStatus(UserStatus.ACTIVE.name());
-        userRepository.save(user);
+    public UserResponse findById(long userId){
+        User user = userRepository.findById(userId).orElseThrow(() -> new ResourceNotFoundException("User not found"));
+        return userMapper.toResponse(user);
     }
+
 }

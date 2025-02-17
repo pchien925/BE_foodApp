@@ -18,7 +18,7 @@ import org.springframework.web.bind.annotation.*;
 @RequestMapping("/api/v1/auth")
 @RequiredArgsConstructor
 @Tag(name = "Authentication", description = "Authentication API")
-@Slf4j
+@Slf4j(topic = "AUTH_CONTROLLER")
 public class AuthController {
     private final AuthService authService;
 
@@ -40,4 +40,15 @@ public class AuthController {
                 .data(authService.register(request))
                 .build();
     }
+
+    @GetMapping("/activate")
+    public ResponseData<String> activate(@RequestParam String token){
+        return ResponseData.<String>builder()
+                .status(HttpStatus.OK.value())
+                .message("Account activated")
+                .data(authService.activate(token))
+                .build();
+    }
+
+
 }

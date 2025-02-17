@@ -2,6 +2,7 @@ package com.foodApp.controller;
 
 import com.foodApp.dto.request.UserRequestDTO;
 import com.foodApp.dto.response.ResponseData;
+import com.foodApp.dto.response.UserResponse;
 import com.foodApp.entity.User;
 import com.foodApp.exception.ResourceNotFoundException;
 import com.foodApp.service.UserService;
@@ -17,11 +18,12 @@ public class UserController {
     private final UserService userService;
 
     @GetMapping("/{userId}")
-    public ResponseData<String> getUserById(@PathVariable @Min(1) Long userId){
-        if (userId == 1){
-        throw new ResourceNotFoundException("User not found");
-        }
-        return new ResponseData<>(200, "User found", "user");
+    public ResponseData<UserResponse> getUserById(@PathVariable @Min(1) Long userId){
+        return ResponseData.<UserResponse>builder()
+                .status(200)
+                .message("User found")
+                .data(userService.findById(userId))
+                .build();
     }
 
     @PostMapping
@@ -39,9 +41,4 @@ public class UserController {
         return new ResponseData<>(200, "User status updated");
     }
 
-    @PatchMapping("/verifyUser")
-    public ResponseData<String> verifyUser(@RequestParam String username, @RequestParam Integer verificationCode){
-        userService.verifyUser(username, verificationCode);
-        return new ResponseData<>(200, "User verified");
-    }
 }

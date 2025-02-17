@@ -1,6 +1,8 @@
 package com.foodApp.service.impl;
 
+import com.foodApp.exception.InvalidDataException;
 import com.foodApp.service.JwtService;
+import com.foodApp.util.TokenType;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.io.Decoders;
@@ -24,8 +26,20 @@ public class JwtServiceImpl implements JwtService {
     @Value("${jwt.expiryHour}")
     private Long expiryHour;
 
+    @Value("${jwt.expiryDay}")
+    private Long expiryDay;
+
     @Value("${jwt.accessKey}")
     private String accessKey;
+
+    @Value("${jwt.refreshKey}")
+    private String refreshKey;
+
+    @Value("${jwt.verificationKey}")
+    private String verificationKey;
+
+    @Value("${jwt.resetKey}")
+    private String resetKey;
 
     @Override
     public String generateToken(UserDetails user) {
@@ -33,15 +47,30 @@ public class JwtServiceImpl implements JwtService {
     }
 
     @Override
-    public String extractUsername(String token){
-        return extractClaim(token, Claims::getSubject);
+    public String generateRefreshToken(UserDetails user) {
+        return generateRefreshToken(new HashMap<>(), user);
     }
 
     @Override
-    public boolean isValid(String token, UserDetails userDetails){
+    public String generateVerificationToken(UserDetails user) {
+        return generateVerificationToken(new HashMap<>(), user);
+    }
+
+    @Override
+    public String generateResetToken(UserDetails user) {
+        return generateResetToken(new HashMap<>(), user);
+    }
+
+    @Override
+    public String extractUsername(String token, TokenType type){
+        return extractClaim(token, type, Claims::getSubject);
+    }
+
+    @Override
+    public boolean isValid(String token, TokenType type, UserDetails userDetails){
         log.info("---------- isValid ----------");
-        final String username = extractUsername(token);
-        return (username.equals(userDetails.getUsername()) && !isTokenExpired(token));
+        final String username = extractUsername(token, type);
+        return (username.equals(userDetails.getUsername()) && !isTokenExpired(token, type));
     }
 
     private String generateToken(Map<String, Object> claims, UserDetails user){
@@ -50,28 +79,72 @@ public class JwtServiceImpl implements JwtService {
                 .subject(user.getUsername())
                 .issuedAt(new Date(System.currentTimeMillis()))
                 .expiration(new Date(System.currentTimeMillis() + 1000 * 60 * 60 * expiryHour))
-                .signWith(getKey(), Jwts.SIG.HS256)
+                .signWith(getKey(TokenType.ACCESS_TOKEN), Jwts.SIG.HS256)
                 .compact();
     }
 
-    private <T> T extractClaim(String token, Function<Claims, T> claimsResolver) {
-        final Claims claims = extractAllClaims(token);
+    private String generateRefreshToken(Map<String, Object> claims, UserDetails user){
+        return Jwts.builder()
+                .claims(claims)
+                .subject(user.getUsername())
+                .issuedAt(new Date(System.currentTimeMillis()))
+                .expiration(new Date(System.currentTimeMillis() + 1000 * 60 * 60 * expiryDay))
+                .signWith(getKey(TokenType.REFRESH_TOKEN), Jwts.SIG.HS256)
+                .compact();
+    }
+
+    private String generateVerificationToken(Map<String, Object> claims, UserDetails user){
+        return Jwts.builder()
+                .claims(claims)
+                .subject(user.getUsername())
+                .issuedAt(new Date(System.currentTimeMillis()))
+                .expiration(new Date(System.currentTimeMillis() + 1000 * 60 * 60 ))
+                .signWith(getKey(TokenType.VERIFICATION_TOKEN), Jwts.SIG.HS256)
+                .compact();
+    }
+
+    private String generateResetToken(Map<String, Object> claims, UserDetails user){
+        return Jwts.builder()
+                .claims(claims)
+                .subject(user.getUsername())
+                .issuedAt(new Date(System.currentTimeMillis()))
+                .expiration(new Date(System.currentTimeMillis() + 1000 * 60 * 60 ))
+                .signWith(getKey(TokenType.VERIFICATION_TOKEN), Jwts.SIG.HS256)
+                .compact();
+    }
+
+    private <T> T extractClaim(String token, TokenType type, Function<Claims, T> claimsResolver) {
+        final Claims claims = extractAllClaims(token, type);
         return claimsResolver.apply(claims);
     }
 
-    private Claims extractAllClaims(String token){
-        return Jwts.parser().verifyWith(getKey()).build().parseSignedClaims(token).getPayload();
+    private Claims extractAllClaims(String token, TokenType type){
+        return Jwts.parser().verifyWith(getKey(type)).build().parseSignedClaims(token).getPayload();
     }
 
-    private SecretKey getKey(){
-        return Keys.hmacShaKeyFor(Decoders.BASE64.decode(accessKey));
+    private SecretKey getKey(TokenType type){
+        switch (type) {
+            case ACCESS_TOKEN -> {
+                return Keys.hmacShaKeyFor(Decoders.BASE64.decode(accessKey));
+            }
+            case REFRESH_TOKEN -> {
+                return Keys.hmacShaKeyFor(Decoders.BASE64.decode(refreshKey));
+            }
+            case VERIFICATION_TOKEN -> {
+                return Keys.hmacShaKeyFor(Decoders.BASE64.decode(verificationKey));
+            }
+            case RESET_TOKEN -> {
+                return Keys.hmacShaKeyFor(Decoders.BASE64.decode(resetKey));
+            }
+            default -> throw new InvalidDataException("Invalid token type");
+        }
     }
 
-    private boolean isTokenExpired(String token){
-        return extractExpiration(token).before(new Date());
+    private boolean isTokenExpired(String token, TokenType type){
+        return extractExpiration(token, type).before(new Date());
     }
 
-    private Date extractExpiration(String token){
-        return extractClaim(token, Claims::getExpiration);
+    private Date extractExpiration(String token, TokenType type){
+        return extractClaim(token, type, Claims::getExpiration);
     }
 }
