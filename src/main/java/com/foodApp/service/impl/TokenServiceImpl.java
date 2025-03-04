@@ -15,8 +15,8 @@ public class TokenServiceImpl implements TokenService {
     private final TokenRepository tokenRepository;
 
     @Override
-    public Token findByUsername(String username){
-        return tokenRepository.findByUsername(username)
+    public Token findByEmail(String email){
+        return tokenRepository.findByEmail(email)
                 .orElseThrow(() -> new ResourceNotFoundException("Token not found"));
     }
 
@@ -28,7 +28,7 @@ public class TokenServiceImpl implements TokenService {
 
     @Override
     public void save(Token token){
-        Optional<Token> optional = tokenRepository.findByUsername(token.getUsername());
+        Optional<Token> optional = tokenRepository.findByEmail(token.getEmail());
         if (optional.isEmpty())
             tokenRepository.save(token);
         else {

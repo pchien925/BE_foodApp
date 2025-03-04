@@ -1,23 +1,16 @@
 package com.foodApp.service.impl;
 
-import com.foodApp.dto.request.EmailRequest;
-import com.foodApp.dto.request.RegisterRequest;
-import com.foodApp.dto.request.SignInRequest;
+import com.foodApp.dto.request.*;
 import com.foodApp.dto.response.TokenResponse;
 import com.foodApp.dto.response.UserResponse;
-import com.foodApp.entity.Token;
+import com.foodApp.entity.Otp;
 import com.foodApp.entity.User;
-import com.foodApp.exception.AccessDeniedException;
 import com.foodApp.exception.InvalidDataException;
 import com.foodApp.exception.ResourceNotFoundException;
 import com.foodApp.mapper.UserMapper;
-import com.foodApp.repository.TokenRepository;
 import com.foodApp.repository.UserRepository;
-import com.foodApp.service.AuthService;
-import com.foodApp.service.EmailService;
-import com.foodApp.service.JwtService;
-import com.foodApp.service.TokenService;
-import com.foodApp.util.TokenType;
+import com.foodApp.service.*;
+import com.foodApp.util.OtpType;
 import com.foodApp.util.UserStatus;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -28,6 +21,8 @@ import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import java.time.LocalDateTime;
+import java.util.Optional;
 
 @Slf4j
 @Service
@@ -41,19 +36,24 @@ public class AuthServiceImpl implements AuthService {
     private final JwtService jwtService;
     private final EmailService emailService;
     private final PasswordEncoder passwordEncoder;
+    private final OtpService otpService;
 
     @Override
     public TokenResponse authenticate(SignInRequest signInRequest) {
         //Authentication
         try {
-            Authentication authentication = authenticationManager.authenticate(new UsernamePasswordAuthenticationToken(signInRequest.getUsername(), signInRequest.getPassword()));
+            Authentication authentication = authenticationManager.authenticate(new UsernamePasswordAuthenticationToken(signInRequest.getEmail(), signInRequest.getPassword()));
             SecurityContextHolder.getContext().setAuthentication(authentication);
         }
         catch (AuthenticationException e){
-            throw new AccessDeniedException(e.getMessage());
+            throw new com.foodApp.exception.AuthenticationException("Email or password not correct");
         }
-        User user = userRepository.findByUsername(signInRequest.getUsername())
-                .orElseThrow(() -> new ResourceNotFoundException("User or password not correct"));
+        User user = userRepository.findByEmail(signInRequest.getEmail())
+                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
+
+        if (user.getStatus().equals(UserStatus.INACTIVE.name())){
+            throw new InvalidDataException("Account not activated");
+        }
 
         String accessToken = jwtService.generateToken(user);
         String refreshToken = jwtService.generateRefreshToken(user);
@@ -68,65 +68,83 @@ public class AuthServiceImpl implements AuthService {
 
     @Override
     public UserResponse register(RegisterRequest request){
-        if (userRepository.existsByUsername(request.getUsername())){
-            throw new InvalidDataException("Username already exists");
-        }
         if (userRepository.existsByEmail(request.getEmail())){
             throw new InvalidDataException("Email already exists");
+        }
+        if (userRepository.existsByPhone(request.getPhone())){
+            throw new InvalidDataException("Phone number already exists");
         }
 
         User user = userMapper.toEntity(request);
         user.setPassword(passwordEncoder.encode(request.getPassword()));
-        user.setStatus(UserStatus.INACTIVE.name());
-        String verificationCode = jwtService.generateVerificationToken(user);
-        tokenService.save(Token.builder()
-                        .username(user.getUsername())
-                        .verificationToken(verificationCode)
-                .build());
+        User saveUser = userRepository.save(user);
+        Otp otp = otpService.generateOtp(user, "VERIFICATION");
+        otpService.save(otp);
         EmailRequest emailRequest = EmailRequest.builder()
                 .recipient(user.getEmail())
                 .subject("Registration")
-                .msgBody("click this link to activate your account: http://localhost:9990/api/v1/auth/activate?code=" + verificationCode)
+                .msgBody("Your verification code is: " + otp.getCode() + ". Please don't share this code with anyone")
                 .build();
         emailService.sendSimpleMail(emailRequest);
-        return userMapper.toResponse(userRepository.save(user));
+        return userMapper.toResponse(saveUser);
     }
 
     @Override
-    public String activate(String token){
-        String username = jwtService.extractUsername(token, TokenType.VERIFICATION_TOKEN);
-        User user = userRepository.findByUsername(username)
+    public String verifyEmail(VerifyRequest request) {
+        User user = userRepository.findByEmail(request.getEmail())
                 .orElseThrow(() -> new ResourceNotFoundException("User not found"));
-        Token verificationToken = tokenService.findByVerificationToken(token);
-        if (jwtService.isValid(token, TokenType.VERIFICATION_TOKEN, user) && !verificationToken.getUsername().equals(username)){
-            throw new InvalidDataException("Invalid verification code");
+        Otp otp = otpService.findByCodeAndTypeAndUser_Id(request.getCode(), OtpType.VERIFICATION.name(), user.getId());
+
+        if (!otp.isUsed() && otp.getExpiresAt().isAfter(LocalDateTime.now())) {
+            user.setStatus(UserStatus.ACTIVE.name());
+            userRepository.save(user);
+            otp.setUsed(true);
+            otpService.save(otp);
+            return "Email verified";
         }
-
-        user.setStatus(UserStatus.ACTIVE.name());
-        userRepository.save(user);
-
-        return "Account activated";
+        throw new InvalidDataException("Invalid verification code");
     }
 
     @Override
-    public String forgotPassword(String email){
-        User user = userRepository.findByEmail(email)
-                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
+    public String forgotPassword(ForgotPasswordRequest request) {
+        Optional<User> optionalUser = userRepository.findByEmail(request.getEmail());
+        User user = optionalUser.orElseThrow(() -> new ResourceNotFoundException("User not found"));
 
-        String resetToken = jwtService.generateResetToken(user);
-
-        tokenService.save(Token.builder()
-                .username(user.getUsername())
-                .resetToken(resetToken)
-                .build());
-
+        Otp otp = otpService.generateOtp(user, OtpType.RESET_PASSWORD.name());
+        otp.setData(request.getEmail());
+        otpService.save(otp);
         EmailRequest emailRequest = EmailRequest.builder()
                 .recipient(user.getEmail())
                 .subject("Reset Password")
-                .msgBody("click this link to reset your password: http://localhost:9990/api/v1/auth/reset-password?code=" + resetToken)
+                .msgBody("Your reset password code is: " + otp.getCode() + ". Please don't share this code with anyone")
                 .build();
         emailService.sendSimpleMail(emailRequest);
-
-        return "Reset password link sent to your email";
+        return "Reset password code sent to your email";
     }
+
+    @Override
+    public String resetPassword(ResetPasswordRequest request) {
+        User user  = userRepository.findByEmail(request.getEmail())
+                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
+        Otp otp = otpService.findByCodeAndTypeAndUser_Id(request.getOtpCode(), OtpType.RESET_PASSWORD.name(), user.getId());
+        if (!otp.isUsed() && otp.getExpiresAt().isAfter(LocalDateTime.now())) {
+            otp.setUsed(true);
+            otpService.save(otp);
+            return "Reset";
+        }
+        throw new InvalidDataException("Invalid verification code");
+    }
+
+    @Override
+    public String changePassword(ChangePasswordRequest request){
+        User user = userRepository.findByEmail(request.getEmail())
+                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
+        if (!request.getPassword().equals(request.getConfirmPassword())){
+            throw new InvalidDataException("Password not match");
+        }
+        user.setPassword(passwordEncoder.encode(request.getPassword()));
+        userRepository.save(user);
+        return "Password changed";
+    }
+
 }

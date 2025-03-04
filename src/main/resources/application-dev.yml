@@ -6,9 +6,9 @@ spring:
     activate:
       on-profile: dev
   datasource:
-    url: jdbc:mysql://localhost:3306/food_app
-    username: root
-    password: 25092004chien
+    url: ${DATABASE_URL}
+    username: ${DATABASE_USERNAME}
+    password: ${DATABASE_PASSWORD}
     driver-class-name: com.mysql.cj.jdbc.Driver
   jpa:
     hibernate:
@@ -19,10 +19,10 @@ spring:
         dialect: org.hibernate.dialect.MySQL8Dialect
         format_sql: true
   mail:
-    host: smtp.gmail.com
-    port: 587
-    username: phamchien9254@gmail.com
-    password: ubur aumm ogch ganm
+    host: ${MAIL_HOST:smtp.gmail.com}
+    port: ${MAIL_PORT}
+    username: ${MAIL_USERNAME}
+    password: ${MAIL_PASSWORD}
     properties:
         mail:
             smtp:
@@ -43,3 +43,18 @@ jwt:
   refreshKey: 9k1jJAWAKQCnCEz1pwcPNegbHoLugf9hgEnn6sz5pFc=
   verificationKey: s+E3RRAIKn1Kcb5iWDsKtcV7r6g0omm7wHgdVkIyGtgA
   resetKey: FsWyO8iaNYbbs0sPDeSjWpJtL45yVIkmFIcnqC2VUmmB
+
+otp:
+  verification:
+    expiryMinute: 5
+  reset-password:
+    expiryMinute: 5
+  update-email:
+    expiryMinute: 10
+  update-phone:
+    expiryMinute: 10
+
+cloudinary:
+  cloud_name: ${CLOUDINARY_CLOUD_NAME}
+  api_key: ${CLOUDINARY_API_KEY}
+  api_secret: ${CLOUDINARY_API_SECRET}

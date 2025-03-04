@@ -1,21 +1,19 @@
 package com.foodApp.dto.request;
 
-import com.foodApp.util.EnumValue;
-import com.foodApp.util.Platform;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import lombok.Getter;
 
 @Getter
-public class SignInRequest {
-    @Email(message = "email must be valid")
+public class ChangePasswordRequest {
+    @Email(message = "email invalid format")
     private String email;
 
     @NotBlank(message = "password must be not null")
     private String password;
 
-    @EnumValue(name = "platform", enumClass = Platform.class)
-    private String platform;
+    @NotBlank(message = "confirmPassword must be not null")
+    private String confirmPassword;
 
-    private String deviceToken;
+
 }

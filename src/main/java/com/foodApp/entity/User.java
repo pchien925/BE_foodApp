@@ -19,23 +19,33 @@ import java.util.List;
 @NoArgsConstructor
 @AllArgsConstructor
 public class User extends AbstractEntity<Long> implements UserDetails, Serializable {
-    private String username;
-
+    @Column(name = "email", unique = true)
     private String email;
 
+    @Column(name = "password", nullable = false)
     private String password;
 
+    @Column(name = "phone", unique = true)
     private String phone;
 
-    private String lastName;
+    @Column(name = "full_name")
+    private String fullName;
 
-    private String firstName;
+    @Column(name = "avatar")
+    private String avatar;
 
+    @Column(name = "dob")
     private Date dob;
 
+    @Column(name = "gender")
     private String gender;
 
-    private String status;
+    @Column(name = "status")
+    @Builder.Default
+    private String status = UserStatus.INACTIVE.name();
+
+    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL)
+    private List<Otp> otps;
 
     @Override
     @Transient
@@ -45,7 +55,7 @@ public class User extends AbstractEntity<Long> implements UserDetails, Serializa
 
     @Override
     public String getUsername() {
-        return username;
+        return email;
     }
 
     @Override

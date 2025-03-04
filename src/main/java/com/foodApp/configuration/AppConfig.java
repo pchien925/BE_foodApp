@@ -36,7 +36,7 @@ public class AppConfig {
                 registry.addMapping("/**")
                         .allowedMethods("*")
                         .allowedHeaders("*")
-                        .allowedOrigins("http://localhost:9990")
+                        .allowedOrigins("http://localhost:9990", "http://172.17.13.13:9990")
                         .allowCredentials(true)
                         .maxAge(3600);
             }
@@ -54,7 +54,7 @@ public class AppConfig {
                 .csrf(AbstractHttpConfigurer::disable)
                 .authorizeHttpRequests(authorizeRequests ->
                         authorizeRequests
-                                .requestMatchers("/api/v1/auth/**").permitAll()
+                                .requestMatchers("/api/v1/**").permitAll()
                                 .anyRequest().authenticated()
                 )
                 .sessionManagement(manager ->

@@ -14,23 +14,18 @@ import java.util.Date;
 
 @Getter
 public class RegisterRequest {
-    @NotBlank(message = "username must be not null")
-    private String username;
-
-    @NotBlank(message = "password must be not null")
-    private String password;
 
     @Email(message = "email invalid format")
     private String email;
 
+    @NotBlank(message = "password must be not null")
+    private String password;
+
     @PhoneNumber(message = "phone invalid format")
     private String phone;
 
-    @NotBlank(message = "lastname must be not null")
-    private String lastName;
-
-    @NotBlank(message = "firstname must be not null")
-    private String firstName;
+    @NotBlank(message = "fullName must be not null")
+    private String fullName;
 
     @NotNull(message = "dateOfBirth must be not null")
     @DateTimeFormat(iso = DateTimeFormat.ISO.DATE)

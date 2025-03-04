@@ -1,7 +1,6 @@
 package com.foodApp.controller;
 
-import com.foodApp.dto.request.RegisterRequest;
-import com.foodApp.dto.request.SignInRequest;
+import com.foodApp.dto.request.*;
 import com.foodApp.dto.response.ResponseData;
 import com.foodApp.dto.response.TokenResponse;
 import com.foodApp.dto.response.UserResponse;
@@ -41,14 +40,30 @@ public class AuthController {
                 .build();
     }
 
-    @GetMapping("/activate")
-    public ResponseData<String> activate(@RequestParam String token){
+    @PostMapping("/verify")
+    public ResponseData<String> verify(@RequestBody @Valid VerifyRequest request){
         return ResponseData.<String>builder()
                 .status(HttpStatus.OK.value())
-                .message("Account activated")
-                .data(authService.activate(token))
+                .message("Verify success")
+                .data(authService.verifyEmail(request))
                 .build();
     }
 
+    @PostMapping("/forgot-password")
+    public ResponseData<String> forgotPassword(@RequestBody @Valid ForgotPasswordRequest request){
+        return ResponseData.<String>builder()
+                .status(HttpStatus.OK.value())
+                .message("Forgot password success")
+                .data(authService.forgotPassword(request))
+                .build();
+    }
 
+    @PostMapping("/reset-password")
+    public ResponseData<String> resetPassword(@RequestBody @Valid ResetPasswordRequest request){
+        return ResponseData.<String>builder()
+                .status(HttpStatus.OK.value())
+                .message("Reset password success")
+                .data(authService.resetPassword(request))
+                .build();
+    }
 }

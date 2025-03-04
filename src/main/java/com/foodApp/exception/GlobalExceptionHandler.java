@@ -2,14 +2,19 @@ package com.foodApp.exception;
 
 import io.swagger.v3.oas.annotations.Hidden;
 import jakarta.validation.ConstraintViolationException;
+import org.hibernate.engine.jdbc.spi.SqlExceptionHelper;
+import org.springframework.dao.DataAccessException;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.access.AccessDeniedException;
+import org.springframework.security.core.AuthenticationException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.context.request.WebRequest;
 
+import java.sql.SQLSyntaxErrorException;
 import java.util.Date;
 
 @Hidden
@@ -95,4 +100,52 @@ public class GlobalExceptionHandler {
         return errorResponse;
     }
 
+    @ExceptionHandler(AuthenticationException.class)
+    @ResponseStatus(HttpStatus.FORBIDDEN)
+    public ErrorResponse AuthenticationExceptionHandler(Exception e, WebRequest request) {
+        ErrorResponse errorResponse = new ErrorResponse();
+        errorResponse.setTimestamp(new Date());
+        errorResponse.setStatus(HttpStatus.FORBIDDEN.value());
+        errorResponse.setPath(request.getDescription(false).replace("uri=", ""));
+        errorResponse.setError(HttpStatus.FORBIDDEN.getReasonPhrase());
+        errorResponse.setMessage("Authentication failed");
+        return errorResponse;
+    }
+
+    @ExceptionHandler(DataAccessException.class)
+    @ResponseStatus(HttpStatus.BAD_REQUEST)
+    public ErrorResponse SqlExceptionHelperHandler(Exception e, WebRequest request){
+        ErrorResponse errorResponse = new ErrorResponse();
+        errorResponse.setTimestamp(new Date());
+        errorResponse.setStatus(HttpStatus.BAD_REQUEST.value());
+        errorResponse.setPath(request.getDescription(false).replace("uri=", ""));
+        errorResponse.setError(HttpStatus.BAD_REQUEST.getReasonPhrase());
+        errorResponse.setMessage(e.getMessage());
+
+        return errorResponse;
+    }
+    @ExceptionHandler(DataIntegrityViolationException.class)
+    @ResponseStatus(HttpStatus.CONFLICT)
+    public ErrorResponse DataIntegrityViolationExceptionHandler(Exception e, WebRequest request){
+        ErrorResponse errorResponse = new ErrorResponse();
+        errorResponse.setTimestamp(new Date());
+        errorResponse.setStatus(HttpStatus.CONFLICT.value());
+        errorResponse.setPath(request.getDescription(false).replace("uri=", ""));
+        errorResponse.setError(HttpStatus.CONFLICT.getReasonPhrase());
+        errorResponse.setMessage(e.getCause().getMessage());
+
+        return errorResponse;
+    }
+
+    @ExceptionHandler(SQLSyntaxErrorException.class)
+    @ResponseStatus(HttpStatus.BAD_REQUEST)
+    public ErrorResponse handleSQLSyntaxErrorException(SQLSyntaxErrorException e, WebRequest request) {
+        ErrorResponse errorResponse = new ErrorResponse();
+        errorResponse.setTimestamp(new Date());
+        errorResponse.setStatus(HttpStatus.BAD_REQUEST.value());
+        errorResponse.setPath(request.getDescription(false).replace("uri=", ""));
+        errorResponse.setError("Invalid SQL query");
+        errorResponse.setMessage("There was an error in the database query syntax");
+        return errorResponse;
+    }
 }

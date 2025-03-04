@@ -1,7 +1,6 @@
 package com.foodApp.configuration;
 
 import com.foodApp.service.JwtService;
-import com.foodApp.service.UserService;
 import com.foodApp.util.TokenType;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
