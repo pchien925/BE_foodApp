@@ -66,4 +66,13 @@ public class AuthController {
                 .data(authService.resetPassword(request))
                 .build();
     }
+
+    @PostMapping("/change-password")
+    public ResponseData<String> changePassword(@RequestBody @Valid ChangePasswordRequest request){
+        return ResponseData.<String>builder()
+                .status(HttpStatus.OK.value())
+                .message("Change password success")
+                .data(authService.changePassword(request))
+                .build();
+    }
 }

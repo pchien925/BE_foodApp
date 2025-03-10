@@ -13,6 +13,8 @@ import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.Size;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -21,11 +23,13 @@ import java.io.IOException;
 @RestController
 @RequestMapping("/api/v1/users")
 @RequiredArgsConstructor
+@EnableMethodSecurity
 public class UserController {
     private final UserService userService;
     private final CloudinaryService cloudinaryService;
 
     @GetMapping("/{userId}")
+    @PreAuthorize("hasRole('ROLE_STAFF')")
     public ResponseData<UserResponse> getUserById(@PathVariable @Min(1) Long userId){
         return ResponseData.<UserResponse>builder()
                 .status(200)

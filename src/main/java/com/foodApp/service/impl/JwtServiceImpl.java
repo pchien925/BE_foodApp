@@ -9,6 +9,8 @@ import io.jsonwebtoken.io.Decoders;
 import io.jsonwebtoken.security.Keys;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.userdetails.User;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
 
@@ -17,6 +19,7 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.function.Function;
+import java.util.stream.Collectors;
 
 
 @Service
@@ -43,7 +46,10 @@ public class JwtServiceImpl implements JwtService {
 
     @Override
     public String generateToken(UserDetails user) {
-        return generateToken(new HashMap<>(), user);
+        Map<String, Object> claims = new HashMap<>();
+        claims.put("roles", getRoles(user));;
+
+        return generateToken(claims, user);
     }
 
     @Override
@@ -146,5 +152,11 @@ public class JwtServiceImpl implements JwtService {
 
     private Date extractExpiration(String token, TokenType type){
         return extractClaim(token, type, Claims::getExpiration);
+    }
+
+    private String getRoles(UserDetails user) {
+        return user.getAuthorities().stream()
+                .map(GrantedAuthority::getAuthority)
+                .collect(Collectors.joining(" "));
     }
 }

@@ -4,12 +4,11 @@ import com.foodApp.util.UserStatus;
 import jakarta.persistence.*;
 import lombok.*;
 import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 
 import java.io.Serializable;
-import java.util.Collection;
-import java.util.Date;
-import java.util.List;
+import java.util.*;
 
 @Entity
 @Table(name = "tbl_user")
@@ -47,10 +46,13 @@ public class User extends AbstractEntity<Long> implements UserDetails, Serializa
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL)
     private List<Otp> otps;
 
+    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL)
+    private Set<UserHasRole> roles = new HashSet<>();
+
     @Override
     @Transient
     public Collection<? extends GrantedAuthority> getAuthorities() {
-        return List.of();
+        return roles.stream().map(r -> new SimpleGrantedAuthority(r.getRole().getName().name())).toList();
     }
 
     @Override

@@ -44,6 +44,7 @@ public class AuthServiceImpl implements AuthService {
         try {
             Authentication authentication = authenticationManager.authenticate(new UsernamePasswordAuthenticationToken(signInRequest.getEmail(), signInRequest.getPassword()));
             SecurityContextHolder.getContext().setAuthentication(authentication);
+            log.info(SecurityContextHolder.getContext().getAuthentication().getAuthorities().toString());
         }
         catch (AuthenticationException e){
             throw new com.foodApp.exception.AuthenticationException("Email or password not correct");
