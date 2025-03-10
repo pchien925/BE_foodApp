@@ -49,6 +49,9 @@ public class User extends AbstractEntity<Long> implements UserDetails, Serializa
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL)
     private Set<UserHasRole> roles = new HashSet<>();
 
+    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL)
+    private List<Order> orders = new ArrayList<>();
+
     @Override
     @Transient
     public Collection<? extends GrantedAuthority> getAuthorities() {
