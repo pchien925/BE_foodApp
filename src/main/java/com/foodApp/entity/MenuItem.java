@@ -21,11 +21,16 @@ public class MenuItem extends AbstractEntity<Long> {
 
     private String imageUrl;
 
-    private double basePrice;
+    private Double basePrice;
 
-    private boolean available;
+    private Boolean available;
 
-    @OneToMany(mappedBy = "menuItem", cascade = CascadeType.ALL, orphanRemoval = true)
+    @ManyToMany
+    @JoinTable(
+            name = "tbl_menu_item_option_type",
+            joinColumns = @JoinColumn(name = "menu_item_id"),
+            inverseJoinColumns = @JoinColumn(name = "option_type_id")
+    )
     @Builder.Default
     private Set<OptionType> optionTypes = new HashSet<>();
 

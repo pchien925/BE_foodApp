@@ -1,9 +1,6 @@
 package com.foodApp.entity;
 
-import jakarta.persistence.Entity;
-import jakarta.persistence.JoinColumn;
-import jakarta.persistence.ManyToOne;
-import jakarta.persistence.Table;
+import jakarta.persistence.*;
 import lombok.*;
 
 @Entity
@@ -16,11 +13,16 @@ import lombok.*;
 public class OptionValue extends AbstractEntity<Long>{
     private String name;
     private String description;
-    private double extraCost;
-    private boolean available;
+
+    @Column(name = "extra_cost")
+    private Double extraCost;
 
     @Builder.Default
-    private boolean defaultOption = false;
+    private Boolean available = true;
+
+    @Builder.Default
+    @Column(name = "default_option")
+    private Boolean defaultOption = false;
 
     @ManyToOne
     @JoinColumn(name = "option_type_id")

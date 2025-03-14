@@ -17,10 +17,11 @@ public class OptionType extends AbstractEntity<Long> {
     private String name;
     private String description;
 
-    @ManyToOne
-    @JoinColumn(name = "menu_item_id")
-    private MenuItem menuItem;
+    @ManyToMany(mappedBy = "optionTypes")
+    @Builder.Default
+    private Set<MenuItem> menuItems = new HashSet<>();
 
     @OneToMany(mappedBy = "optionType", cascade = CascadeType.ALL, orphanRemoval = true)
+    @Builder.Default
     private Set<OptionValue> optionValues = new HashSet<>();
 }

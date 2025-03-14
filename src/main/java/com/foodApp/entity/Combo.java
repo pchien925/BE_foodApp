@@ -18,8 +18,8 @@ public class Combo extends AbstractEntity<Long> {
     private String description;
     @Column(name = "image_url")
     private String imageUrl;
-    private double price;
-    private boolean available;
+    private Double price;
+    private Boolean available;
 
     @OneToMany(mappedBy = "combo", cascade = CascadeType.ALL, orphanRemoval = true)
     @Builder.Default

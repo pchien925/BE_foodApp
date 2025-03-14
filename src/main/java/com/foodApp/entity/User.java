@@ -47,9 +47,11 @@ public class User extends AbstractEntity<Long> implements UserDetails, Serializa
     private List<Otp> otps;
 
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL)
+    @Builder.Default
     private Set<UserHasRole> roles = new HashSet<>();
 
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL)
+    @Builder.Default
     private List<Order> orders = new ArrayList<>();
 
     @Override
