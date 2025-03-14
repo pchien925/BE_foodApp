@@ -1,16 +1,17 @@
 package com.foodApp.controller;
 
 import com.foodApp.dto.request.AddOptionTypesRequest;
-import com.foodApp.dto.request.DelOptionTypesRequest;
 import com.foodApp.dto.request.MenuItemRequest;
-import com.foodApp.dto.request.OptionTypeRequest;
 import com.foodApp.dto.response.*;
 import com.foodApp.service.MenuItemService;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Min;
+import jakarta.validation.constraints.NotNull;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.Set;
 
 @RestController
 @RequestMapping("/api/v1/menu-items")
@@ -55,7 +56,7 @@ public class MenuItemController {
                 .build();
     }
 
-    @GetMapping("/paged")
+    @GetMapping
     public ResponseData<PageResponse<MenuItemResponse>> getMenuItems(
             @RequestParam(defaultValue = "1") int page,
             @RequestParam(defaultValue = "10") int size,
@@ -95,22 +96,21 @@ public class MenuItemController {
     )
     {
         return ResponseData.<MenuItemResponse>builder()
-                .status(200)
+                .status(HttpStatus.OK.value())
                 .message("Option types added")
                 .data(menuItemService.addOptionTypes(id, request))
                 .build();
     }
 
     @DeleteMapping("/{id}/option-types")
-    public ResponseData<MenuItemResponse> delOptionTypes(
+    public ResponseData<MenuItemResponse> deleteOptionTypes(
             @PathVariable @Min(value = 0, message = "Invalid menu item ID") Long id,
-            @RequestBody @Valid DelOptionTypesRequest request
-    )
-    {
+            @RequestParam("optionTypeIds") @NotNull(message = "Option type IDs cannot be null") Set<Long> optionTypeIds
+    ) {
         return ResponseData.<MenuItemResponse>builder()
-                .status(200)
+                .status(HttpStatus.OK.value())
                 .message("Option types deleted")
-                .data(menuItemService.delOptionTypes(id, request))
+                .data(menuItemService.deleteOptionTypes(id, optionTypeIds))
                 .build();
     }
 }

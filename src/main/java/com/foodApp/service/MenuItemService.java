@@ -1,17 +1,12 @@
 package com.foodApp.service;
 
 import com.foodApp.dto.request.AddOptionTypesRequest;
-import com.foodApp.dto.request.DelOptionTypesRequest;
 import com.foodApp.dto.request.MenuItemRequest;
-import com.foodApp.dto.request.OptionTypeRequest;
-import com.foodApp.dto.response.MenuCategoryResponse;
 import com.foodApp.dto.response.MenuItemResponse;
-import com.foodApp.dto.response.OptionTypeResponse;
 import com.foodApp.dto.response.PageResponse;
 import com.foodApp.entity.MenuItem;
-import jakarta.transaction.Transactional;
-import jakarta.validation.Valid;
-import jakarta.validation.constraints.Min;
+
+import java.util.Set;
 
 public interface MenuItemService {
     MenuItemResponse getMenuItem(Long id);
@@ -30,6 +25,5 @@ public interface MenuItemService {
 
     MenuItemResponse addOptionTypes(Long menuItemId, AddOptionTypesRequest request);
 
-    @Transactional
-    MenuItemResponse delOptionTypes(Long menuItemId, DelOptionTypesRequest request);
+    MenuItemResponse deleteOptionTypes(Long menuItemId, Set<Long> optionTypeIds);
 }

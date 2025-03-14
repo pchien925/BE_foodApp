@@ -12,8 +12,11 @@ import org.mapstruct.MappingTarget;
 public interface UserMapper {
     User toEntity(RegisterRequest request);
     User toEntity(UserRequestDTO request);
-    UserResponse toResponse(User user);
 
+    @Mapping(target = "roles", expression = "java(entity.getRoles().stream().map(role -> role.getRole().getName()).collect(java.util.stream.Collectors.toList()))")
+    UserResponse toResponse(User entity);
+
+    @Mapping(target = "id", ignore = true)
     @Mapping(target = "email", ignore = true)
     @Mapping(target = "phone", ignore = true)
     @Mapping(target = "password", ignore = true)

@@ -1,27 +1,29 @@
 package com.foodApp.service.impl;
 
 import com.foodApp.dto.request.MenuCategoryRequest;
+import com.foodApp.dto.response.ComboResponse;
 import com.foodApp.dto.response.MenuCategoryResponse;
 import com.foodApp.dto.response.MenuItemResponse;
 import com.foodApp.dto.response.PageResponse;
+import com.foodApp.entity.Combo;
 import com.foodApp.entity.MenuCategory;
 import com.foodApp.entity.MenuItem;
 import com.foodApp.exception.ResourceNotFoundException;
+import com.foodApp.mapper.ComboMapper;
 import com.foodApp.mapper.MenuCategoryMapper;
 import com.foodApp.mapper.MenuItemMapper;
+import com.foodApp.repository.ComboRepository;
 import com.foodApp.repository.MenuCategoryRepository;
 import com.foodApp.repository.MenuItemRepository;
 import com.foodApp.service.MenuCategoryService;
 import com.foodApp.util.PaginationUtil;
+import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
-import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
-import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -30,12 +32,16 @@ public class MenuCategoryServiceImpl implements MenuCategoryService {
     private final MenuCategoryMapper menuCategoryMapper;
     private final MenuItemRepository menuItemRepository;
     private final MenuItemMapper menuItemMapper;
+    private final ComboRepository comboRepository;
+    private final ComboMapper comboMapper;
+
 
     @Override
     public MenuCategoryResponse getMenuCategory(Long id) {
         return menuCategoryMapper.toResponse(findById(id));
     }
 
+    @Transactional
     @Override
     public MenuCategoryResponse createMenuCategory(MenuCategoryRequest request) {
         if (request == null) {
@@ -45,6 +51,7 @@ public class MenuCategoryServiceImpl implements MenuCategoryService {
         return menuCategoryMapper.toResponse(menuCategoryRepository.save(menuCategory));
     }
 
+    @Transactional
     @Override
     public MenuCategoryResponse updateMenuCategory(Long id, MenuCategoryRequest request) {
         if (id == null) {
@@ -59,6 +66,7 @@ public class MenuCategoryServiceImpl implements MenuCategoryService {
         return menuCategoryMapper.toResponse(menuCategoryRepository.save(menuCategory));
     }
 
+    @Transactional
     @Override
     public void deleteMenuCategory(Long id) {
         if (id == null) {
@@ -125,4 +133,18 @@ public class MenuCategoryServiceImpl implements MenuCategoryService {
     }
 
 
+    @Override
+    public PageResponse<ComboResponse> getCombos(Long id, Integer page, Integer size, String sort, String direction) {
+        Pageable pageable = PaginationUtil.createPageable(page, size, sort, direction);
+
+        Page<Combo> comboPage = comboRepository.findByMenuCategoryId(id, pageable);
+
+        return PageResponse.<ComboResponse>builder()
+                .currentPage(page)
+                .pageSize(size)
+                .totalPages(comboPage.getTotalPages())
+                .totalElements(comboPage.getTotalElements())
+                .content(comboPage.getContent().stream().map(comboMapper::toResponse).toList())
+                .build();
+    }
 }

@@ -12,6 +12,7 @@ import com.foodApp.mapper.OptionValueMapper;
 import com.foodApp.repository.OptionTypeRepository;
 import com.foodApp.repository.OptionValueRepository;
 import com.foodApp.service.OptionTypeService;
+import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -40,6 +41,7 @@ public class OptionTypeServiceImpl implements OptionTypeService {
         return optionTypeMapper.toResponse(findById(id));
     }
 
+    @Transactional
     @Override
     public OptionTypeResponse createOptionType(OptionTypeRequest request) {
         if (request == null) {
@@ -50,6 +52,7 @@ public class OptionTypeServiceImpl implements OptionTypeService {
         return optionTypeMapper.toResponse(optionTypeRepository.save(optionType));
     }
 
+    @Transactional
     @Override
     public OptionTypeResponse updateOptionType(Long id, OptionTypeRequest request) {
         if (id == null) {
@@ -67,6 +70,7 @@ public class OptionTypeServiceImpl implements OptionTypeService {
         return optionTypeMapper.toResponse(updatedOptionType);
     }
 
+    @Transactional
     @Override
     public void deleteOptionType(Long id) {
         if (id == null) {

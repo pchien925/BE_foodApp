@@ -17,6 +17,7 @@ import com.foodApp.service.EmailService;
 import com.foodApp.service.OtpService;
 import com.foodApp.service.UserService;
 import com.foodApp.util.OtpType;
+import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -36,6 +37,7 @@ public class UserServiceImpl implements UserService {
     private final EmailService emailService;
     private final CloudinaryService cloudinaryService;
 
+    @Transactional
     @Override
     public Long create(UserRequestDTO request){
         if (userRepository.existsByEmail(request.getEmail())){
@@ -56,6 +58,7 @@ public class UserServiceImpl implements UserService {
         return savedUser.getId();
     }
 
+
     @Override
     public void updateStatus(long userId, String status){
         User user = userRepository.findById(userId).orElseThrow(() -> new ResourceNotFoundException("User not found"));
@@ -69,6 +72,7 @@ public class UserServiceImpl implements UserService {
         return userMapper.toResponse(user);
     }
 
+    @Transactional
     @Override
     public UserResponse update(Long userId, UserRequestDTO request){
         if (userRepository.existsByEmail(request.getEmail())){

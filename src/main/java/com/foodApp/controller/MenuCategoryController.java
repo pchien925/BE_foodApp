@@ -1,10 +1,7 @@
 package com.foodApp.controller;
 
 import com.foodApp.dto.request.MenuCategoryRequest;
-import com.foodApp.dto.response.MenuCategoryResponse;
-import com.foodApp.dto.response.MenuItemResponse;
-import com.foodApp.dto.response.PageResponse;
-import com.foodApp.dto.response.ResponseData;
+import com.foodApp.dto.response.*;
 import com.foodApp.service.MenuCategoryService;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Min;
@@ -96,6 +93,20 @@ public class MenuCategoryController {
                 .status(HttpStatus.OK.value())
                 .message("Menu items retrieved")
                 .data(menuCategoryService.getMenuItems(id, page, size, sort, direction))
+                .build();
+    }
+
+    @GetMapping("/{id}/combos")
+    public ResponseData<PageResponse<ComboResponse>> getCombos(@PathVariable @Min(value = 0, message = "Invalid category ID") Long id,
+                                                               @RequestParam(defaultValue = "1") int page,
+                                                               @RequestParam(defaultValue = "10") int size,
+                                                               @RequestParam(defaultValue = "name") String sort,
+                                                               @RequestParam(defaultValue = "asc") String direction
+    ) {
+        return ResponseData.<PageResponse<ComboResponse>>builder()
+                .status(HttpStatus.OK.value())
+                .message("Combos retrieved")
+                .data(menuCategoryService.getCombos(id, page, size, sort, direction))
                 .build();
     }
 }

@@ -1,7 +1,6 @@
 package com.foodApp.service.impl;
 
 import com.foodApp.dto.request.AddOptionTypesRequest;
-import com.foodApp.dto.request.DelOptionTypesRequest;
 import com.foodApp.dto.request.MenuItemRequest;
 import com.foodApp.dto.response.MenuItemResponse;
 import com.foodApp.dto.response.PageResponse;
@@ -38,6 +37,7 @@ public class MenuItemServiceImpl implements MenuItemService {
         return menuItemMapper.toResponse(findById(id));
     }
 
+    @Transactional
     @Override
     public MenuItemResponse createMenuItem(MenuItemRequest request) {
         if (request == null) {
@@ -53,6 +53,7 @@ public class MenuItemServiceImpl implements MenuItemService {
         return menuItemMapper.toResponse(menuItemRepository.save(menuItem));
     }
 
+    @Transactional
     @Override
     public MenuItemResponse updateMenuItem(Long id, MenuItemRequest request) {
         if (id == null) {
@@ -76,6 +77,7 @@ public class MenuItemServiceImpl implements MenuItemService {
         return menuItemMapper.toResponse(menuItemRepository.save(menuItem));
     }
 
+    @Transactional
     @Override
     public void deleteMenuItem(Long id) {
         if (id == null) {
@@ -112,6 +114,10 @@ public class MenuItemServiceImpl implements MenuItemService {
 
     @Override
     public PageResponse<MenuItemResponse> searchMenuItems(String query, String menuCategory, Double minPrice, Double maxPrice, int page, int size, String sort, String direction) {
+        if (minPrice != null && maxPrice != null && minPrice > maxPrice) {
+            throw new IllegalArgumentException("minPrice cannot be greater than maxPrice");
+        }
+
         Pageable pageable = PaginationUtil.createPageable(page, size, sort, direction);
 
         Page<MenuItem> menuItemPage = menuItemRepository.searchMenuItems(query, menuCategory, minPrice, maxPrice, pageable);
@@ -146,18 +152,15 @@ public class MenuItemServiceImpl implements MenuItemService {
 
     @Transactional
     @Override
-    public MenuItemResponse delOptionTypes(Long menuItemId, DelOptionTypesRequest request) {
-        if (request == null || request.getOptionTypeIds() == null) {
-            throw new IllegalArgumentException("Request or option type IDs cannot be null");
+    public MenuItemResponse deleteOptionTypes(Long menuItemId, Set<Long> optionTypeIds) {
+        if (optionTypeIds == null) {
+            throw new IllegalArgumentException("Option type IDs cannot be null");
+        }
+        if (optionTypeIds.isEmpty()) {
+            throw new IllegalArgumentException("Option type IDs list cannot be empty");
         }
 
         MenuItem menuItem = findById(menuItemId);
-
-        Set<Long> optionTypeIdsToRemove = new HashSet<>(request.getOptionTypeIds());
-
-        if (optionTypeIdsToRemove.isEmpty()) {
-            throw new IllegalArgumentException("Option type IDs list cannot be empty");
-        }
 
         Set<OptionType> currentOptionTypes = menuItem.getOptionTypes();
 
@@ -166,7 +169,7 @@ public class MenuItemServiceImpl implements MenuItemService {
                 .map(OptionType::getId)
                 .collect(Collectors.toSet());
 
-        Set<Long> nonExistingIds = new HashSet<>(optionTypeIdsToRemove);
+        Set<Long> nonExistingIds = new HashSet<>(optionTypeIds);
         nonExistingIds.removeAll(existingIds);
 
         if (!nonExistingIds.isEmpty()) {
@@ -175,7 +178,8 @@ public class MenuItemServiceImpl implements MenuItemService {
             );
         }
 
-        currentOptionTypes.removeIf(option -> optionTypeIdsToRemove.contains(option.getId()));
+        // Xóa các OptionType khớp với optionTypeIds
+        currentOptionTypes.removeIf(option -> optionTypeIds.contains(option.getId()));
 
         return menuItemMapper.toResponse(menuItemRepository.save(menuItem));
     }
