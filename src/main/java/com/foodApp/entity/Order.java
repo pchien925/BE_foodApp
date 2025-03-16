@@ -42,6 +42,7 @@ public class Order extends AbstractEntity<Long>{
     private int loyaltyPointsEarned;
 
     @OneToMany(mappedBy = "order", cascade = CascadeType.ALL, orphanRemoval = true)
+    @Builder.Default
     private Set<OrderItem> orderItems = new HashSet<>();
 
     @ManyToOne

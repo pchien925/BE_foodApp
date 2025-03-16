@@ -3,6 +3,7 @@ package com.foodApp.service.impl;
 import com.foodApp.dto.request.AddOptionTypesRequest;
 import com.foodApp.dto.request.MenuItemRequest;
 import com.foodApp.dto.response.MenuItemResponse;
+import com.foodApp.dto.response.OptionTypeResponse;
 import com.foodApp.dto.response.PageResponse;
 import com.foodApp.entity.MenuCategory;
 import com.foodApp.entity.MenuItem;
@@ -21,6 +22,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -183,5 +185,4 @@ public class MenuItemServiceImpl implements MenuItemService {
 
         return menuItemMapper.toResponse(menuItemRepository.save(menuItem));
     }
-
 }

@@ -7,13 +7,13 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 @Entity
-@DiscriminatorValue("COMBO")
+@DiscriminatorValue("MENU_ITEM")
 @Getter
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
-public class ComboOrderItem extends OrderItem{
+public class MenuCartItem extends CartItem{
     @ManyToOne
-    @JoinColumn(name = "combo_id", referencedColumnName = "id")
-    private Combo combo;
+    @JoinColumn(name = "menu_item_id", referencedColumnName = "id")
+    private MenuItem menuItem;
 }

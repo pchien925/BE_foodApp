@@ -16,6 +16,7 @@ public abstract class OrderItem extends AbstractEntity<Long> {
 
     @Column(name = "price_at_order")
     private Double priceAtOrder;
+
     private String note;
 
     @ManyToOne

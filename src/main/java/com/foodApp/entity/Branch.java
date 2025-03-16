@@ -24,5 +24,6 @@ public class Branch extends AbstractEntity<Integer> {
     private String latitude;
 
     @OneToMany(mappedBy = "branch", cascade = CascadeType.ALL)
+    @Builder.Default
     private Set<Order> orders = new HashSet<>();
 }

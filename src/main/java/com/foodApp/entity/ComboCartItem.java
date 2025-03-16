@@ -12,7 +12,7 @@ import lombok.Setter;
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
-public class ComboOrderItem extends OrderItem{
+public class ComboCartItem extends CartItem{
     @ManyToOne
     @JoinColumn(name = "combo_id", referencedColumnName = "id")
     private Combo combo;

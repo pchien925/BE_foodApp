@@ -11,7 +11,6 @@ import org.mapstruct.MappingTarget;
 public interface OptionValueMapper {
     OptionValue toEntity(OptionValueRequest request);
 
-    @Mapping(target = "optionTypeId", source = "optionType.id")
     OptionValueResponse toResponse(OptionValue entity);
 
     @Mapping(target = "id", ignore = true)

@@ -9,10 +9,11 @@ import org.mapstruct.Mapping;
 import org.mapstruct.MappingTarget;
 
 
-@Mapper(componentModel = "spring", imports = {OptionType.class})
+@Mapper(componentModel = "spring", imports = {OptionType.class},
+uses = {OptionTypeMapper.class})
 public interface MenuItemMapper {
     @Mapping(target = "menuCategoryId", source = "menuCategory.id")
-    @Mapping(target = "optionTypeIds", expression = "java(entity.getOptionTypes() == null ? null : entity.getOptionTypes().stream().map(OptionType::getId).collect(java.util.stream.Collectors.toSet()))")
+    @Mapping(target = "optionTypes", source = "optionTypes")
     MenuItemResponse toResponse(MenuItem entity);
     MenuItem toEntity(MenuItemRequest request);
 

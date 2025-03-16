@@ -14,7 +14,7 @@ import java.util.Set;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class MenuItem extends AbstractEntity<Long> {
+public class MenuItem extends AbstractEntity<Long>{
     private String name;
 
     private String description;

@@ -9,12 +9,12 @@ import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 import org.mapstruct.MappingTarget;
 
-@Mapper(componentModel = "spring", imports = {OptionValue.class, MenuItem.class})
+@Mapper(componentModel = "spring", imports = { MenuItem.class}
+, uses = {OptionValueMapper.class})
 public interface OptionTypeMapper {
     OptionType toEntity(OptionTypeRequest request);
 
-    @Mapping(target = "menuItemIds", expression = "java(entity.getMenuItems() == null ? null : entity.getMenuItems().stream().map(MenuItem::getId).collect(java.util.stream.Collectors.toSet()))")
-    @Mapping(target = "optionValueIds", expression = "java(entity.getOptionValues() == null ? null : entity.getOptionValues().stream().map(OptionValue::getId).collect(java.util.stream.Collectors.toSet()))")
+    @Mapping(target = "optionValues", source = "optionValues")
     OptionTypeResponse toResponse(OptionType entity);
 
     @Mapping(target = "id", ignore = true)

@@ -19,5 +19,5 @@ public class MenuItemResponse {
     private Double basePrice;
     private Boolean available;
     private Long menuCategoryId;
-    private Set<Long> optionTypeIds;
+    private Set<OptionTypeResponse> optionTypes;
 }
