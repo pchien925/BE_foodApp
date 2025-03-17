@@ -16,5 +16,4 @@ public class OptionValueRequest {
     @Min(value = 0, message = "Invalid extra cost")
     private Double extraCost;
     private Boolean available;
-    private Boolean defaultOption;
 }

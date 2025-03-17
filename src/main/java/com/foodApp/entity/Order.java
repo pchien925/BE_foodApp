@@ -1,6 +1,7 @@
 package com.foodApp.entity;
 
 import com.foodApp.util.OrderStatus;
+import com.foodApp.util.OrderType;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -30,6 +31,10 @@ public class Order extends AbstractEntity<Long>{
     @Column(name = "order_status")
     @Enumerated(EnumType.STRING)
     private OrderStatus orderStatus;
+
+    @Column(name = "order_type")
+    @Enumerated(EnumType.STRING)
+    private OrderType orderType;
 
     @Column(name = "order_at")
     private LocalDateTime orderAt;

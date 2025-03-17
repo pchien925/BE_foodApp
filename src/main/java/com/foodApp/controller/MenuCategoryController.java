@@ -50,15 +50,6 @@ public class MenuCategoryController {
         return new ResponseData<>(HttpStatus.OK.value(), "Menu category deleted");
     }
 
-//    @GetMapping
-//    public ResponseData<List<MenuCategoryResponse>> getAllMenuCategories() {
-//        return ResponseData.<List<MenuCategoryResponse>>builder()
-//                .status(HttpStatus.OK.value())
-//                .message("Menu categories retrieved")
-//                .data(menuCategoryService.getMenuCategories())
-//                .build();
-//    }
-
     @GetMapping
     public ResponseData<PageResponse<MenuCategoryResponse>> getAllMenuCategories(
             @RequestParam(defaultValue = "1") int page,
@@ -73,15 +64,6 @@ public class MenuCategoryController {
                 .build();
     }
 
-//    @GetMapping("/{id}/menu-items")
-//    public ResponseData<List<MenuItemResponse>> getMenuItems(@PathVariable @Min(value = 0, message = "Invalid category ID") Long id) {
-//        return ResponseData.<List<MenuItemResponse>>builder()
-//                .status(HttpStatus.OK.value())
-//                .message("Menu items retrieved")
-//                .data(menuCategoryService.getMenuItems(id))
-//                .build();
-//    }
-
     @GetMapping("/{id}/menu-items")
     public ResponseData<PageResponse<MenuItemResponse>> getMenuItems(@PathVariable @Min(value = 0, message = "Invalid category ID") Long id,
                                                              @RequestParam(defaultValue = "1") int page,
@@ -93,20 +75,6 @@ public class MenuCategoryController {
                 .status(HttpStatus.OK.value())
                 .message("Menu items retrieved")
                 .data(menuCategoryService.getMenuItems(id, page, size, sort, direction))
-                .build();
-    }
-
-    @GetMapping("/{id}/combos")
-    public ResponseData<PageResponse<ComboResponse>> getCombos(@PathVariable @Min(value = 0, message = "Invalid category ID") Long id,
-                                                               @RequestParam(defaultValue = "1") int page,
-                                                               @RequestParam(defaultValue = "10") int size,
-                                                               @RequestParam(defaultValue = "name") String sort,
-                                                               @RequestParam(defaultValue = "asc") String direction
-    ) {
-        return ResponseData.<PageResponse<ComboResponse>>builder()
-                .status(HttpStatus.OK.value())
-                .message("Combos retrieved")
-                .data(menuCategoryService.getCombos(id, page, size, sort, direction))
                 .build();
     }
 }

@@ -15,6 +15,5 @@ public class OptionTypeResponse {
     private Long id;
     private String name;
     private String description;
-
     private Set<OptionValueResponse> optionValues;
 }

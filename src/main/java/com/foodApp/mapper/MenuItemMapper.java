@@ -9,11 +9,9 @@ import org.mapstruct.Mapping;
 import org.mapstruct.MappingTarget;
 
 
-@Mapper(componentModel = "spring", imports = {OptionType.class},
-uses = {OptionTypeMapper.class})
+@Mapper(componentModel = "spring", imports = {OptionType.class})
 public interface MenuItemMapper {
     @Mapping(target = "menuCategoryId", source = "menuCategory.id")
-    @Mapping(target = "optionTypes", source = "optionTypes")
     MenuItemResponse toResponse(MenuItem entity);
     MenuItem toEntity(MenuItemRequest request);
 

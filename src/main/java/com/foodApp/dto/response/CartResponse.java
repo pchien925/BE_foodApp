@@ -9,11 +9,8 @@ import java.util.Set;
 @Getter
 @Setter
 @Builder
-public class MenuCategoryResponse {
+public class CartResponse {
     private Long id;
-    private String name;
-    private String description;
-    private String imageUrl;
-
-    private Set<Long> itemIds;
+    private Long userId;
+    private Set<CartItemResponse> cartItems;
 }

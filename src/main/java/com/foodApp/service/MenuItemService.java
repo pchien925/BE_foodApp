@@ -29,4 +29,6 @@ public interface MenuItemService {
     MenuItemResponse addOptionTypes(Long menuItemId, AddOptionTypesRequest request);
 
     MenuItemResponse deleteOptionTypes(Long menuItemId, Set<Long> optionTypeIds);
+
+    List<OptionTypeResponse> getOptionTypes(@Min(value = 0, message = "Invalid menu item ID") Long id);
 }

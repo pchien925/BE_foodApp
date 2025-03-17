@@ -34,6 +34,7 @@ public class MenuItem extends AbstractEntity<Long>{
     @Builder.Default
     private Set<OptionType> optionTypes = new HashSet<>();
 
+
     @ManyToOne
     @JoinColumn(name = "menu_category_id")
     private MenuCategory menuCategory;

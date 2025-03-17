@@ -10,6 +10,7 @@ import com.foodApp.entity.MenuItem;
 import com.foodApp.entity.OptionType;
 import com.foodApp.exception.ResourceNotFoundException;
 import com.foodApp.mapper.MenuItemMapper;
+import com.foodApp.mapper.OptionTypeMapper;
 import com.foodApp.repository.MenuItemRepository;
 import com.foodApp.repository.OptionTypeRepository;
 import com.foodApp.service.MenuCategoryService;
@@ -32,6 +33,7 @@ public class MenuItemServiceImpl implements MenuItemService {
     private final MenuItemRepository menuItemRepository;
     private final MenuCategoryService menuCategoryService;
     private final MenuItemMapper menuItemMapper;
+    private final OptionTypeMapper optionTypeMapper;
     private final OptionTypeRepository optionTypeRepository;
 
     @Override
@@ -184,5 +186,12 @@ public class MenuItemServiceImpl implements MenuItemService {
         currentOptionTypes.removeIf(option -> optionTypeIds.contains(option.getId()));
 
         return menuItemMapper.toResponse(menuItemRepository.save(menuItem));
+    }
+
+    @Override
+    public List<OptionTypeResponse> getOptionTypes(Long id) {
+        return findById(id).getOptionTypes().stream()
+                .map(optionTypeMapper::toResponse)
+                .toList();
     }
 }

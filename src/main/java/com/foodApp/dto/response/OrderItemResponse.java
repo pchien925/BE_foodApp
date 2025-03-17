@@ -1,20 +1,19 @@
 package com.foodApp.dto.response;
 
-import com.fasterxml.jackson.annotation.JsonInclude;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.Setter;
 
+import java.util.Set;
+
 @Getter
 @Setter
 @Builder
-@JsonInclude(JsonInclude.Include.NON_NULL)
-public class ComboItemResponse {
+public class OrderItemResponse {
     private Long id;
     private Integer quantity;
     private Double priceAtOrder;
     private String note;
-    private Long comboId;
     private MenuItemResponse menuItem;
-    private ComboItemResponse comboItem;
+    private Set<OptionValueResponse> selectedOptions;
 }

@@ -1,18 +1,14 @@
 package com.foodApp.service.impl;
 
 import com.foodApp.dto.request.MenuCategoryRequest;
-import com.foodApp.dto.response.ComboResponse;
 import com.foodApp.dto.response.MenuCategoryResponse;
 import com.foodApp.dto.response.MenuItemResponse;
 import com.foodApp.dto.response.PageResponse;
-import com.foodApp.entity.Combo;
 import com.foodApp.entity.MenuCategory;
 import com.foodApp.entity.MenuItem;
 import com.foodApp.exception.ResourceNotFoundException;
-import com.foodApp.mapper.ComboMapper;
 import com.foodApp.mapper.MenuCategoryMapper;
 import com.foodApp.mapper.MenuItemMapper;
-import com.foodApp.repository.ComboRepository;
 import com.foodApp.repository.MenuCategoryRepository;
 import com.foodApp.repository.MenuItemRepository;
 import com.foodApp.service.MenuCategoryService;
@@ -32,8 +28,6 @@ public class MenuCategoryServiceImpl implements MenuCategoryService {
     private final MenuCategoryMapper menuCategoryMapper;
     private final MenuItemRepository menuItemRepository;
     private final MenuItemMapper menuItemMapper;
-    private final ComboRepository comboRepository;
-    private final ComboMapper comboMapper;
 
 
     @Override
@@ -130,21 +124,5 @@ public class MenuCategoryServiceImpl implements MenuCategoryService {
                 .content(menuItemPage.getContent().stream().map(menuItemMapper::toResponse).toList())
                 .build();
 
-    }
-
-
-    @Override
-    public PageResponse<ComboResponse> getCombos(Long id, Integer page, Integer size, String sort, String direction) {
-        Pageable pageable = PaginationUtil.createPageable(page, size, sort, direction);
-
-        Page<Combo> comboPage = comboRepository.findByMenuCategoryId(id, pageable);
-
-        return PageResponse.<ComboResponse>builder()
-                .currentPage(page)
-                .pageSize(size)
-                .totalPages(comboPage.getTotalPages())
-                .totalElements(comboPage.getTotalElements())
-                .content(comboPage.getContent().stream().map(comboMapper::toResponse).toList())
-                .build();
     }
 }

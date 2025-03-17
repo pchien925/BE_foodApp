@@ -23,7 +23,4 @@ public class MenuCategory extends AbstractEntity<Long> {
     @Builder.Default
     private Set<MenuItem> items = new HashSet<>();
 
-    @OneToMany(mappedBy = "menuCategory", cascade = CascadeType.ALL, orphanRemoval = true)
-    @Builder.Default
-    private Set<Combo> combos = new HashSet<>();
 }

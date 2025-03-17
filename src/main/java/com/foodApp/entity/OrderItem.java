@@ -12,9 +12,7 @@ import java.util.Set;
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
-@Inheritance(strategy = InheritanceType.SINGLE_TABLE)
-@DiscriminatorColumn(name = "order_item_type", discriminatorType = DiscriminatorType.STRING)
-public abstract class OrderItem extends AbstractEntity<Long> {
+public class OrderItem extends AbstractEntity<Long> {
     private Integer quantity;
 
     @Column(name = "price_at_order")
@@ -26,11 +24,15 @@ public abstract class OrderItem extends AbstractEntity<Long> {
     @JoinColumn(name = "order_id")
     private Order order;
 
+    @ManyToOne
+    @JoinColumn(name = "menu_item_id", referencedColumnName = "id")
+    private MenuItem menuItem;
+
     @ManyToMany
     @JoinTable(
-            name = "tbl_cart_item_option_value",
-            joinColumns = @JoinColumn(name = "cart_item_id"),
+            name = "tbl_order_item_option_value",
+            joinColumns = @JoinColumn(name = "order_item_id"),
             inverseJoinColumns = @JoinColumn(name = "option_value_id")
     )
-    private Set<OptionValue> selectedOptions;
+    private Set<OptionValue> selectedOptions = new HashSet<>();
 }

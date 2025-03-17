@@ -10,11 +10,10 @@ import java.util.Set;
 @Table(name = "tbl_cart_item")
 @Getter
 @Setter
+@Builder
 @NoArgsConstructor
 @AllArgsConstructor
-@Inheritance(strategy = InheritanceType.SINGLE_TABLE)
-@DiscriminatorColumn(name = "cart_item_type", discriminatorType = DiscriminatorType.STRING)
-public abstract class CartItem extends AbstractEntity<Long>{
+public class CartItem extends AbstractEntity<Long>{
     private Integer quantity;
 
     private String note;
@@ -23,11 +22,16 @@ public abstract class CartItem extends AbstractEntity<Long>{
     @JoinColumn(name = "cart_id")
     private Cart cart;
 
+    @ManyToOne
+    @JoinColumn(name = "menu_item_id", referencedColumnName = "id")
+    private MenuItem menuItem;
+
     @ManyToMany
     @JoinTable(
             name = "tbl_cart_item_option_value",
             joinColumns = @JoinColumn(name = "cart_item_id"),
             inverseJoinColumns = @JoinColumn(name = "option_value_id")
     )
-    private Set<OptionValue> selectedOptions;
+    @Builder.Default
+    private Set<OptionValue> selectedOptions = new HashSet<>();
 }

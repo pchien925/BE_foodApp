@@ -89,6 +89,17 @@ public class MenuItemController {
                 .build();
     }
 
+    @GetMapping("/{id}/option-types")
+    public ResponseData<List<OptionTypeResponse>> getOptionTypes(
+            @PathVariable @Min(value = 0, message = "Invalid menu item ID") Long id
+    ) {
+        return ResponseData.<List<OptionTypeResponse>>builder()
+                .status(HttpStatus.OK.value())
+                .message("Option types retrieved")
+                .data(menuItemService.getOptionTypes(id))
+                .build();
+    }
+
 
     @PostMapping("/{id}/option-types")
     public ResponseData<MenuItemResponse> addOptionTypes(

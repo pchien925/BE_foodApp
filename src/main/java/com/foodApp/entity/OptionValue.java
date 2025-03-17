@@ -20,10 +20,6 @@ public class OptionValue extends AbstractEntity<Long>{
     @Builder.Default
     private Boolean available = true;
 
-    @Builder.Default
-    @Column(name = "default_option")
-    private Boolean defaultOption = false;
-
     @ManyToOne
     @JoinColumn(name = "option_type_id")
     private OptionType optionType;
