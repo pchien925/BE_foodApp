@@ -3,6 +3,9 @@ package com.foodApp.entity;
 import jakarta.persistence.*;
 import lombok.*;
 
+import java.util.HashSet;
+import java.util.Set;
+
 @Entity
 @Table(name = "tbl_order_item")
 @Getter
@@ -22,4 +25,12 @@ public abstract class OrderItem extends AbstractEntity<Long> {
     @ManyToOne
     @JoinColumn(name = "order_id")
     private Order order;
+
+    @ManyToMany
+    @JoinTable(
+            name = "tbl_cart_item_option_value",
+            joinColumns = @JoinColumn(name = "cart_item_id"),
+            inverseJoinColumns = @JoinColumn(name = "option_value_id")
+    )
+    private Set<OptionValue> selectedOptions;
 }

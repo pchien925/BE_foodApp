@@ -14,5 +14,4 @@ public class OptionValueResponse {
     private Double extraCost;
     private Boolean available;
     private Boolean defaultOption;
-
 }
