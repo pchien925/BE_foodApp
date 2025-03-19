@@ -47,7 +47,7 @@ public class AuthServiceImpl implements AuthService {
             log.info(SecurityContextHolder.getContext().getAuthentication().getAuthorities().toString());
         }
         catch (AuthenticationException e){
-            throw new com.foodApp.exception.AuthenticationException("Email or password not correct");
+            throw new SecurityException("Email or password not correct");
         }
         User user = userRepository.findByEmail(signInRequest.getEmail())
                 .orElseThrow(() -> new ResourceNotFoundException("User not found"));

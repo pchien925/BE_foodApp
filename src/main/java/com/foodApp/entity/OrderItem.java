@@ -10,6 +10,7 @@ import java.util.Set;
 @Table(name = "tbl_order_item")
 @Getter
 @Setter
+@Builder
 @NoArgsConstructor
 @AllArgsConstructor
 public class OrderItem extends AbstractEntity<Long> {
@@ -19,6 +20,10 @@ public class OrderItem extends AbstractEntity<Long> {
     private Double priceAtOrder;
 
     private String note;
+
+    @Column(name = "is_reward_item", nullable = false)
+    @Builder.Default
+    private boolean isRewardItem = false;
 
     @ManyToOne
     @JoinColumn(name = "order_id")

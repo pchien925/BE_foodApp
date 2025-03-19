@@ -2,7 +2,7 @@ package com.foodApp.exception;
 
 import io.swagger.v3.oas.annotations.Hidden;
 import jakarta.validation.ConstraintViolationException;
-import org.hibernate.engine.jdbc.spi.SqlExceptionHelper;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.dao.DataAccessException;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
@@ -13,139 +13,107 @@ import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.context.request.WebRequest;
-
-import java.sql.SQLSyntaxErrorException;
+import java.sql.SQLException;
 import java.util.Date;
+import java.util.stream.Collectors;
 
 @Hidden
 @RestControllerAdvice
+@Slf4j
 public class GlobalExceptionHandler {
 
     @ExceptionHandler({MethodArgumentNotValidException.class, ConstraintViolationException.class})
     @ResponseStatus(HttpStatus.BAD_REQUEST)
-    public ErrorResponse handlerValidationException(Exception e, WebRequest request){
-        String errorMessage = e.getMessage();
-        String error = "";
+    public ErrorResponse handleValidationException(Exception e, WebRequest request) {
+        String errorMessage;
+        String error;
 
-
-        if (e instanceof MethodArgumentNotValidException){
-            errorMessage = errorMessage.substring(errorMessage.lastIndexOf("[") + 1, errorMessage.lastIndexOf("]") - 1);
-            error = "Payload invalid";
+        if (e instanceof MethodArgumentNotValidException ex) {
+            error = "Dữ liệu đầu vào không hợp lệ";
+            errorMessage = ex.getBindingResult().getFieldErrors().stream()
+                    .map(err -> err.getField() + ": " + err.getDefaultMessage())
+                    .collect(Collectors.joining(", "));
+        } else {
+            error = "Biến đường dẫn không hợp lệ";
+            errorMessage = e.getMessage().substring(e.getMessage().indexOf(" ") + 1);
         }
-        else if (e instanceof ConstraintViolationException){
-            errorMessage = errorMessage.substring(errorMessage.indexOf(" ") + 1);
-            error = "PathVariable invalid";
-        }
 
-        ErrorResponse errorResponse = new ErrorResponse();
-        errorResponse.setTimestamp(new Date());
-        errorResponse.setStatus(HttpStatus.BAD_REQUEST.value());
-        errorResponse.setPath(request.getDescription(false).replace("uri=", ""));
-        errorResponse.setError(error);
-        errorResponse.setMessage(errorMessage);
-
-        return errorResponse;
+        log.warn("Lỗi xác thực: {}", errorMessage); // Sử dụng 'log' từ @Slf4j
+        return buildErrorResponse(HttpStatus.BAD_REQUEST, error, errorMessage, request);
     }
-
 
     @ExceptionHandler(ResourceNotFoundException.class)
     @ResponseStatus(HttpStatus.NOT_FOUND)
-    public ErrorResponse handlerResourceNotFoundException(ResourceNotFoundException e, WebRequest request){
-        ErrorResponse errorResponse = new ErrorResponse();
-        errorResponse.setTimestamp(new Date());
-        errorResponse.setStatus(HttpStatus.NOT_FOUND.value());
-        errorResponse.setPath(request.getDescription(false).replace("uri=", ""));
-        errorResponse.setError(HttpStatus.NOT_FOUND.getReasonPhrase());
-        errorResponse.setMessage(e.getMessage());
-
-        return errorResponse;
+    public ErrorResponse handleResourceNotFoundException(ResourceNotFoundException e, WebRequest request) {
+        log.warn("Tài nguyên không tìm thấy: {}", e.getMessage());
+        return buildErrorResponse(HttpStatus.NOT_FOUND, HttpStatus.NOT_FOUND.getReasonPhrase(), e.getMessage(), request);
     }
 
     @ExceptionHandler(DuplicatedException.class)
     @ResponseStatus(HttpStatus.CONFLICT)
-    public ErrorResponse handlerDuplicatedException(DuplicatedException e, WebRequest request){
-        ErrorResponse errorResponse = new ErrorResponse();
-        errorResponse.setTimestamp(new Date());
-        errorResponse.setStatus(HttpStatus.CONFLICT.value());
-        errorResponse.setPath(request.getDescription(false).replace("uri=", ""));
-        errorResponse.setError(HttpStatus.CONFLICT.getReasonPhrase());
-        errorResponse.setMessage(e.getMessage());
-
-        return errorResponse;
+    public ErrorResponse handleDuplicatedException(DuplicatedException e, WebRequest request) {
+        log.warn("Dữ liệu trùng lặp: {}", e.getMessage());
+        return buildErrorResponse(HttpStatus.CONFLICT, HttpStatus.CONFLICT.getReasonPhrase(), e.getMessage(), request);
     }
 
-    @ExceptionHandler(Exception.class)
-    @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
-    public ErrorResponse handlerException(Exception e, WebRequest request){
-        ErrorResponse errorResponse = new ErrorResponse();
-        errorResponse.setTimestamp(new Date());
-        errorResponse.setStatus(HttpStatus.INTERNAL_SERVER_ERROR.value());
-        errorResponse.setPath(request.getDescription(false).replace("uri=", ""));
-        errorResponse.setError(HttpStatus.INTERNAL_SERVER_ERROR.getReasonPhrase());
-        errorResponse.setMessage(e.getMessage());
-
-        return errorResponse;
+    @ExceptionHandler(InvalidDataException.class)
+    @ResponseStatus(HttpStatus.BAD_REQUEST)
+    public ErrorResponse handleInvalidDataException(InvalidDataException e, WebRequest request) {
+        log.warn("Dữ liệu không hợp lệ: {}", e.getMessage());
+        return buildErrorResponse(HttpStatus.BAD_REQUEST, HttpStatus.BAD_REQUEST.getReasonPhrase(), e.getMessage(), request);
     }
 
     @ExceptionHandler(AccessDeniedException.class)
     @ResponseStatus(HttpStatus.FORBIDDEN)
-    public ErrorResponse AccessDeniedExceptionHandler(Exception e, WebRequest request){
-        ErrorResponse errorResponse = new ErrorResponse();
-        errorResponse.setTimestamp(new Date());
-        errorResponse.setStatus(HttpStatus.FORBIDDEN.value());
-        errorResponse.setPath(request.getDescription(false).replace("uri=", ""));
-        errorResponse.setError(HttpStatus.FORBIDDEN.getReasonPhrase());
-        errorResponse.setMessage(e.getMessage());
-
-        return errorResponse;
+    public ErrorResponse handleAccessDeniedException(AccessDeniedException e, WebRequest request) {
+        log.warn("Truy cập bị từ chối: {}", e.getMessage());
+        return buildErrorResponse(HttpStatus.FORBIDDEN, HttpStatus.FORBIDDEN.getReasonPhrase(), e.getMessage(), request);
     }
 
     @ExceptionHandler(AuthenticationException.class)
     @ResponseStatus(HttpStatus.FORBIDDEN)
-    public ErrorResponse AuthenticationExceptionHandler(Exception e, WebRequest request) {
-        ErrorResponse errorResponse = new ErrorResponse();
-        errorResponse.setTimestamp(new Date());
-        errorResponse.setStatus(HttpStatus.FORBIDDEN.value());
-        errorResponse.setPath(request.getDescription(false).replace("uri=", ""));
-        errorResponse.setError(HttpStatus.FORBIDDEN.getReasonPhrase());
-        errorResponse.setMessage("Authentication failed");
-        return errorResponse;
+    public ErrorResponse handleAuthenticationException(AuthenticationException e, WebRequest request) {
+        log.warn("Xác thực thất bại: {}", e.getMessage());
+        return buildErrorResponse(HttpStatus.FORBIDDEN, HttpStatus.FORBIDDEN.getReasonPhrase(), "Xác thực thất bại", request);
     }
 
     @ExceptionHandler(DataAccessException.class)
     @ResponseStatus(HttpStatus.BAD_REQUEST)
-    public ErrorResponse SqlExceptionHelperHandler(Exception e, WebRequest request){
-        ErrorResponse errorResponse = new ErrorResponse();
-        errorResponse.setTimestamp(new Date());
-        errorResponse.setStatus(HttpStatus.BAD_REQUEST.value());
-        errorResponse.setPath(request.getDescription(false).replace("uri=", ""));
-        errorResponse.setError(HttpStatus.BAD_REQUEST.getReasonPhrase());
-        errorResponse.setMessage(e.getMessage());
-
-        return errorResponse;
+    public ErrorResponse handleDataAccessException(DataAccessException e, WebRequest request) {
+        log.error("Lỗi truy cập dữ liệu: {}", e.getMessage(), e);
+        return buildErrorResponse(HttpStatus.BAD_REQUEST, HttpStatus.BAD_REQUEST.getReasonPhrase(), e.getMessage(), request);
     }
+
     @ExceptionHandler(DataIntegrityViolationException.class)
     @ResponseStatus(HttpStatus.CONFLICT)
-    public ErrorResponse DataIntegrityViolationExceptionHandler(Exception e, WebRequest request){
-        ErrorResponse errorResponse = new ErrorResponse();
-        errorResponse.setTimestamp(new Date());
-        errorResponse.setStatus(HttpStatus.CONFLICT.value());
-        errorResponse.setPath(request.getDescription(false).replace("uri=", ""));
-        errorResponse.setError(HttpStatus.CONFLICT.getReasonPhrase());
-        errorResponse.setMessage(e.getCause().getMessage());
-
-        return errorResponse;
+    public ErrorResponse handleDataIntegrityViolationException(DataIntegrityViolationException e, WebRequest request) {
+        log.error("Lỗi toàn vẹn dữ liệu: {}", e.getCause().getMessage(), e);
+        return buildErrorResponse(HttpStatus.CONFLICT, HttpStatus.CONFLICT.getReasonPhrase(), e.getCause().getMessage(), request);
     }
 
-    @ExceptionHandler(SQLSyntaxErrorException.class)
+    @ExceptionHandler(SQLException.class)
     @ResponseStatus(HttpStatus.BAD_REQUEST)
-    public ErrorResponse handleSQLSyntaxErrorException(SQLSyntaxErrorException e, WebRequest request) {
-        ErrorResponse errorResponse = new ErrorResponse();
-        errorResponse.setTimestamp(new Date());
-        errorResponse.setStatus(HttpStatus.BAD_REQUEST.value());
-        errorResponse.setPath(request.getDescription(false).replace("uri=", ""));
-        errorResponse.setError("Invalid SQL query");
-        errorResponse.setMessage("There was an error in the database query syntax");
-        return errorResponse;
+    public ErrorResponse handleSQLException(SQLException e, WebRequest request) {
+        String detailedMessage = String.format("Lỗi cơ sở dữ liệu: %s (SQL State: %s, Mã lỗi: %d)",
+                e.getMessage(), e.getSQLState(), e.getErrorCode());
+        log.error("Lỗi SQL: {}", detailedMessage, e);
+        return buildErrorResponse(HttpStatus.BAD_REQUEST, "Lỗi truy vấn cơ sở dữ liệu", detailedMessage, request);
+    }
+
+    @ExceptionHandler(Exception.class)
+    @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
+    public ErrorResponse handleGeneralException(Exception e, WebRequest request) {
+        log.error("Lỗi không xác định: {}", e.getMessage(), e);
+        return buildErrorResponse(HttpStatus.INTERNAL_SERVER_ERROR, HttpStatus.INTERNAL_SERVER_ERROR.getReasonPhrase(), e.getMessage(), request);
+    }
+
+    private ErrorResponse buildErrorResponse(HttpStatus status, String error, String message, WebRequest request) {
+        return ErrorResponse.builder()
+                .timestamp(new Date())
+                .status(status.value())
+                .path(request.getDescription(false).replace("uri=", ""))
+                .error(error)
+                .message(message)
+                .build();
     }
 }

@@ -5,8 +5,6 @@ import com.foodApp.util.OrderType;
 import jakarta.persistence.*;
 import lombok.*;
 
-import java.sql.Timestamp;
-import java.time.LocalDateTime;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -17,14 +15,13 @@ import java.util.Set;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class Order extends AbstractEntity<Long>{
-    @Column(name = "order_number")
-    private Integer orderNumber;
-
+public class Order extends AbstractEntity<Long> {
     @Column(name = "delivery_name")
     private String deliveryName;
+
     @Column(name = "delivery_phone")
     private String deliveryPhone;
+
     @Column(name = "delivery_address")
     private String deliveryAddress;
 
@@ -36,12 +33,8 @@ public class Order extends AbstractEntity<Long>{
     @Enumerated(EnumType.STRING)
     private OrderType orderType;
 
-    @Column(name = "order_at")
-    private LocalDateTime orderAt;
-
     @Column(name = "total_amount")
     private Double totalAmount;
-
 
     @Column(name = "loyalty_points_earned")
     private int loyaltyPointsEarned;
@@ -57,4 +50,7 @@ public class Order extends AbstractEntity<Long>{
     @ManyToOne
     @JoinColumn(name = "branch_id")
     private Branch branch;
+
+    @OneToOne(mappedBy = "order", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    private Payment payment;
 }

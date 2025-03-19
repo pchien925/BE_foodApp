@@ -2,16 +2,15 @@ package com.foodApp.service.impl;
 
 import com.foodApp.dto.request.CartItemRequest;
 import com.foodApp.dto.response.CartResponse;
-import com.foodApp.dto.response.OrderResponse;
 import com.foodApp.entity.*;
 import com.foodApp.exception.ResourceNotFoundException;
 import com.foodApp.mapper.CartItemMapper;
 import com.foodApp.mapper.CartMapper;
 import com.foodApp.repository.CartRepository;
 import com.foodApp.repository.OptionValueRepository;
-import com.foodApp.repository.UserRepository;
 import com.foodApp.service.CartService;
 import com.foodApp.service.MenuItemService;
+import com.foodApp.service.UserService;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -22,7 +21,6 @@ import org.springframework.stereotype.Service;
 
 import java.util.HashSet;
 import java.util.Set;
-import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -31,9 +29,16 @@ public class CartServiceImpl implements CartService {
     private final CartRepository cartRepository;
     private final CartMapper cartMapper;
     private final CartItemMapper cartItemMapper;
-    private final UserRepository userRepository;
+    private final UserService userService;
     private final MenuItemService menuItemService;
     private final OptionValueRepository optionValueRepository;
+
+    @Transactional
+    @Override
+    public Cart findByUsername(String email) {
+        return cartRepository.findByUser_Email(email)
+                .orElseThrow(() -> new ResourceNotFoundException("Cart not found with email: " + email));
+    }
 
     @Override
     @Transactional
@@ -152,8 +157,7 @@ public class CartServiceImpl implements CartService {
 
     private Cart createNewCart(String username) {
         Cart cart = new Cart();
-        cart.setUser(userRepository.findByEmail(username)
-                .orElseThrow(() -> new ResourceNotFoundException("User not found")));
+        cart.setUser(userService.findByEmail(username));
         return cartRepository.save(cart);
     }
 
@@ -163,16 +167,6 @@ public class CartServiceImpl implements CartService {
             throw new SecurityException("No authenticated user found or invalid authentication");
         }
         return ((UserDetails) authentication.getPrincipal()).getUsername();
-    }
-
-    private void validateOptions(MenuItem menuItem, Set<OptionValue> selectedOptions) {
-        Set<Long> optionValueIds = menuItem.getOptionTypes().stream()
-                .flatMap(optionType -> optionType.getOptionValues().stream())
-                .map(OptionValue::getId)
-                .collect(Collectors.toSet());
-        if (!optionValueIds.containsAll(selectedOptions.stream().map(OptionValue::getId).collect(Collectors.toSet()))) {
-            throw new ResourceNotFoundException("Invalid option values for menu item");
-        }
     }
 
     private void validateSingleOptionValuePerOptionType(Set<OptionValue> selectedOptions) {

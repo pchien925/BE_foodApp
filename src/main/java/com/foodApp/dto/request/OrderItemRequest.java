@@ -1,30 +1,28 @@
 package com.foodApp.dto.request;
 
+import com.foodApp.entity.MenuItem;
+import com.foodApp.entity.OptionValue;
 import com.foodApp.entity.Order;
-import jakarta.persistence.Column;
-import jakarta.persistence.JoinColumn;
-import jakarta.persistence.ManyToOne;
+import jakarta.persistence.*;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotNull;
+import lombok.Builder;
 import lombok.Getter;
 
-@Getter
-public class OrderItemRequest {
-    @NotNull(message = "Quantity must be greater than 0")
-    @Min(value = 1, message = "Quantity must be greater than 0")
-    private Integer quantity;
+import java.util.HashSet;
+import java.util.Set;
 
-    private Double priceAtOrder;
+@Getter
+@Builder
+public class OrderItemRequest {
+    @NotNull
+    @Min(value = 1, message = "Invalid quantity")
+    private Integer quantity;
 
     private String note;
 
-    @Min(value = 1, message = "Invalid menu item ID")
     private Long menuItemId;
 
-    @Min(value = 1, message = "Invalid combo ID")
-    private Long comboId;
-
-    @NotNull(message = "Order ID must not be null")
-    @Min(value = 1, message = "Invalid order ID")
-    private Long orderId;
+    @Builder.Default
+    private Set<Long> selectedOptionIds = new HashSet<>();
 }

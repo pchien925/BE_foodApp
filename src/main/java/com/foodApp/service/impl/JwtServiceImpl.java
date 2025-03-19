@@ -115,7 +115,7 @@ public class JwtServiceImpl implements JwtService {
                 .subject(user.getUsername())
                 .issuedAt(new Date(System.currentTimeMillis()))
                 .expiration(new Date(System.currentTimeMillis() + 1000 * 60 * 60 ))
-                .signWith(getKey(TokenType.VERIFICATION_TOKEN), Jwts.SIG.HS256)
+                .signWith(getKey(TokenType.RESET_TOKEN), Jwts.SIG.HS256)
                 .compact();
     }
 
