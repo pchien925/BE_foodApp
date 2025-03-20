@@ -2,6 +2,8 @@ package com.foodApp.repository;
 
 import com.foodApp.entity.MenuItem;
 import com.foodApp.entity.Order;
+import com.foodApp.util.OrderStatus;
+import com.foodApp.util.OrderType;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -18,15 +20,26 @@ public interface OrderRepository extends JpaRepository<Order, Long> {
 
     Page<Order> findByUser_Email(String email, Pageable pageable);
 
-//    @Query("SELECT o FROM Order o WHERE " +
-//            "(:q IS NULL OR LOWER(o.orderStatus) LIKE LOWER(CONCAT('%', :q, '%'))) AND " +
-//            "(:category IS NULL OR m.menuCategory.name = :category) AND " +
-//            "(:minPrice IS NULL OR m.basePrice >= :minPrice) AND " +
-//            "(:maxPrice IS NULL OR m.basePrice <= :maxPrice)"
-//    )
-//    Page<Order> searchMenuItems(
-//            @Param("q") String query,
-//            Pageable pageable
-//    );
+    @Query("SELECT o FROM Order o WHERE " +
+            "(:query IS NULL OR " +
+            "LOWER(o.deliveryName) LIKE LOWER(CONCAT('%', :query, '%')) OR " +
+            "LOWER(o.deliveryPhone) LIKE LOWER(CONCAT('%', :query, '%')) OR " +
+            "LOWER(o.deliveryAddress) LIKE LOWER(CONCAT('%', :query, '%'))) AND " +
+            "(:status IS NULL OR o.orderStatus = :status) AND " +
+            "(:type IS NULL OR o.orderType = :type) AND " +
+            "(:minAmount IS NULL OR o.totalAmount >= :minAmount) AND " +
+            "(:maxAmount IS NULL OR o.totalAmount <= :maxAmount) AND " +
+            "(:userId IS NULL OR o.user.id = :userId) AND " +
+            "(:branchId IS NULL OR o.branch.id = :branchId)")
+    Page<Order> searchOrders(
+            @Param("query") String query,
+            @Param("status") OrderStatus status,
+            @Param("type") OrderType type,
+            @Param("minAmount") Double minAmount,
+            @Param("maxAmount") Double maxAmount,
+            @Param("userId") Long userId,
+            @Param("branchId") Long branchId,
+            Pageable pageable
+    );
 
 }

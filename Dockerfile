@@ -1,9 +1,5 @@
 FROM openjdk:23
-
-ARG JAR_FILE=target/*.jar
-
-ADD ${JAR_FILE} app.jar
-
-ENTRYPOINT ["java", "-jar", "app.jar"]
-
+WORKDIR /app
+COPY target/foodApp-1.0.jar app.jar
 EXPOSE 9990
+ENTRYPOINT ["java", "-jar", "app.jar"]

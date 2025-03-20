@@ -11,9 +11,13 @@ import org.springframework.core.io.FileSystemResource;
 import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.MimeMessageHelper;
+import org.springframework.scheduling.annotation.Async;
+import org.springframework.scheduling.annotation.AsyncResult;
 import org.springframework.stereotype.Service;
 
 import java.io.File;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.Future;
 
 @Service
 @RequiredArgsConstructor
@@ -26,7 +30,8 @@ public class EmailServiceImpl implements EmailService {
     private String sender;
 
     @Override
-    public String sendSimpleMail(EmailRequest request) {
+    @Async("asyncTaskExecutor")
+    public CompletableFuture<String> sendSimpleMail(EmailRequest request) {
         try {
 
             // Creating a simple mail message
@@ -42,7 +47,7 @@ public class EmailServiceImpl implements EmailService {
             // Sending the mail
             javaMailSender.send(mailMessage);
             log.info("send mail success: {}", request.getRecipient());
-            return "Mail Sent Successfully...";
+            return CompletableFuture.completedFuture("Mail sent Successfully");
         }
 
         // Catch block to handle the exceptions

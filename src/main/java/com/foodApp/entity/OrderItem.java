@@ -39,5 +39,6 @@ public class OrderItem extends AbstractEntity<Long> {
             joinColumns = @JoinColumn(name = "order_item_id"),
             inverseJoinColumns = @JoinColumn(name = "option_value_id")
     )
+    @Builder.Default
     private Set<OptionValue> selectedOptions = new HashSet<>();
 }

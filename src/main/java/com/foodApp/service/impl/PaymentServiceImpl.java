@@ -3,6 +3,7 @@ package com.foodApp.service.impl;
 import com.foodApp.dto.response.OrderResponse;
 import com.foodApp.entity.Order;
 import com.foodApp.entity.Payment;
+import com.foodApp.exception.PaymentException;
 import com.foodApp.mapper.OrderMapper;
 import com.foodApp.repository.OrderRepository;
 import com.foodApp.repository.PaymentRepository;
@@ -30,18 +31,18 @@ public class PaymentServiceImpl implements PaymentService {
     @Override
     public OrderResponse processPayment(Long orderId) {
         Order order = orderRepository.findByIdAndUser_Email(orderId, getUsername())
-                .orElseThrow(() -> new IllegalArgumentException("Order not found or not authorized"));
+                .orElseThrow(() -> new PaymentException("Order not found or not authorized"));
 
         if (order.getOrderStatus() != OrderStatus.PENDING) {
-            throw new IllegalStateException("Only PENDING orders can be processed for payment");
+            throw new PaymentException("Only PENDING orders can be processed for payment");
         }
 
         Payment payment = order.getPayment();
         if (payment == null) {
-            throw new IllegalStateException("No payment associated with this order");
+            throw new PaymentException("No payment associated with this order");
         }
         if (payment.getPaymentStatus() == PaymentStatus.PAID) {
-            throw new IllegalStateException("Order has already been paid");
+            throw new PaymentException("Order has already been paid");
         }
 
         if (payment.getPaymentMethod() == PaymentMethod.CARD || payment.getPaymentMethod() == PaymentMethod.MOBILE) {
@@ -54,13 +55,13 @@ public class PaymentServiceImpl implements PaymentService {
             } catch (Exception e) {
                 payment.setPaymentStatus(PaymentStatus.FAILED);
                 payment.setErrorMessage("Payment failed: " + e.getMessage());
-                throw new RuntimeException("Payment processing failed", e);
+                throw new PaymentException("Payment processing failed", e);
             }
         } else if (payment.getPaymentMethod() == PaymentMethod.COD) {
             payment.setPaymentStatus(PaymentStatus.PENDING);
             order.setOrderStatus(OrderStatus.CONFIRMED);
         } else {
-            throw new IllegalArgumentException("Unsupported payment method: " + payment.getPaymentMethod());
+            throw new PaymentException("Unsupported payment method: " + payment.getPaymentMethod());
         }
 
         paymentRepository.save(payment);
@@ -72,18 +73,18 @@ public class PaymentServiceImpl implements PaymentService {
     @Override
     public OrderResponse refundPayment(Long orderId) {
         Order order = orderRepository.findByIdAndUser_Email(orderId, getUsername())
-                .orElseThrow(() -> new IllegalArgumentException("Order not found or not authorized"));
+                .orElseThrow(() -> new PaymentException("Order not found or not authorized"));
 
         if (order.getOrderStatus() == OrderStatus.DELIVERED) {
-            throw new IllegalStateException("Cannot refund a DELIVERED order");
+            throw new PaymentException("Cannot refund a DELIVERED order");
         }
 
         Payment payment = order.getPayment();
         if (payment == null) {
-            throw new IllegalStateException("No payment associated with this order");
+            throw new PaymentException("No payment associated with this order");
         }
         if (payment.getPaymentStatus() != PaymentStatus.PAID) {
-            throw new IllegalStateException("Order has not been paid or already refunded");
+            throw new PaymentException("Order has not been paid or already refunded");
         }
 
         if (payment.getPaymentMethod() == PaymentMethod.CARD || payment.getPaymentMethod() == PaymentMethod.MOBILE) {
@@ -93,10 +94,10 @@ public class PaymentServiceImpl implements PaymentService {
                 order.setOrderStatus(OrderStatus.CANCELED);
             } catch (Exception e) {
                 payment.setErrorMessage("Refund failed: " + e.getMessage());
-                throw new RuntimeException("Refund processing failed", e);
+                throw new PaymentException("Refund processing failed", e);
             }
         } else if (payment.getPaymentMethod() == PaymentMethod.COD) {
-            throw new IllegalStateException("Cannot refund CASH_ON_DELIVERY payment before delivery");
+            throw new PaymentException("Cannot refund CASH_ON_DELIVERY payment before delivery");
         }
 
         paymentRepository.save(payment);

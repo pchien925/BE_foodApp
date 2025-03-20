@@ -6,6 +6,7 @@ import com.foodApp.dto.response.PageResponse;
 import com.foodApp.dto.response.ResponseData;
 import com.foodApp.service.OrderService;
 import com.foodApp.util.OrderStatus;
+import com.foodApp.util.OrderType;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -58,6 +59,26 @@ public class OrderController {
                 .status(HttpStatus.OK.value())
                 .message("All orders retrieved successfully")
                 .data(orderService.getAllOrders(page, size, sort, direction))
+                .build();
+    }
+
+    @GetMapping("/search")
+    public ResponseData<PageResponse<OrderResponse>> searchOrders(
+            @RequestParam(required = false) String query,
+            @RequestParam(required = false) OrderStatus status,
+            @RequestParam(required = false) OrderType type,
+            @RequestParam(required = false) Double minAmount,
+            @RequestParam(required = false) Double maxAmount,
+            @RequestParam(required = false) Long userId,
+            @RequestParam(required = false) Long branchId,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size,
+            @RequestParam(defaultValue = "id") String sort,
+            @RequestParam(defaultValue = "asc") String direction) {
+        return ResponseData.<PageResponse<OrderResponse>>builder()
+                .status(HttpStatus.OK.value())
+                .message("Orders retrieved successfully")
+                .data(orderService.searchOrders(query, status, type, minAmount, maxAmount, userId, branchId, page, size, sort, direction))
                 .build();
     }
 

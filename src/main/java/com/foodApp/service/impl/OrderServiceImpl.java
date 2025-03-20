@@ -194,6 +194,24 @@ public class OrderServiceImpl implements OrderService {
                 .build();
     }
 
+    @Override
+    public PageResponse<OrderResponse> searchOrders(String query, OrderStatus status, OrderType type, Double minAmount, Double maxAmount, Long userId, Long branchId, int page, int size, String sort, String direction) {
+        if (minAmount != null && maxAmount != null && minAmount > maxAmount) {
+            throw new IllegalArgumentException("minAmount must be less than or equal to maxAmount");
+        }
+
+        Pageable pageable = PaginationUtil.createPageable(page, size, sort, direction);
+        Page<Order> orderPage = orderRepository.searchOrders(query, status, type, minAmount, maxAmount, userId, branchId, pageable);
+
+        return PageResponse.<OrderResponse>builder()
+                .currentPage(page)
+                .pageSize(size)
+                .totalPages(orderPage.getTotalPages())
+                .totalElements(orderPage.getTotalElements())
+                .content(orderPage.getContent().stream().map(orderMapper::toResponse).toList())
+                .build();
+    }
+
     @Transactional
     @Override
     public void cancelOrder(Long orderId) {

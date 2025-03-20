@@ -6,36 +6,42 @@ spring:
     activate:
       on-profile: dev
   datasource:
-    url: ${DATABASE_URL}
-    username: ${DATABASE_USERNAME}
-    password: ${DATABASE_PASSWORD}
+    url: jdbc:mysql://localhost:3307/food_app
+    username: root
+    password: password
     driver-class-name: com.mysql.cj.jdbc.Driver
+    hikari:
+      initialization-fail-timeout: 60000
+      connection-timeout: 30000
   jpa:
     hibernate:
-     ddl-auto: none
+      ddl-auto: none
     show-sql: true
+    database-platform:
+      org.hibernate.dialect.MySQLDialect
     properties:
       hibernate:
-        dialect: org.hibernate.dialect.MySQLDialect
         format_sql: true
   mail:
     host: ${MAIL_HOST:smtp.gmail.com}
-    port: ${MAIL_PORT}
-    username: ${MAIL_USERNAME}
+    port: 587
+    username: phamchien9254@gmail.com
     password: ${MAIL_PASSWORD}
     properties:
-        mail:
-            smtp:
-              auth: true
-              starttls:
-                  enable: true
-                  required: true
+      mail:
+        smtp:
+          auth: true
+          starttls:
+            enable: true
+            required: true
+
 openapi:
   service:
     api-docs: food-app
     server: http://localhost:9990
     title: Food app service
     version: 1.0.0
+
 jwt:
   expiryHour: 1
   expiryDay: 14
