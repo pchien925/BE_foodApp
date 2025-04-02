@@ -1,38 +1,68 @@
 services:
-  food-app-service:
-    container_name: food-app-container
+  backend-service:
+    container_name: food-app-delivery-service
     build:
-      context: .  # Thư mục chứa Dockerfile
-      dockerfile: Dockerfile  # Tên file Dockerfile (nếu khác thì sửa lại)
-    image: food-app-image
+      context: .
+      dockerfile: Dockerfile
     ports:
       - "9990:9990"
     environment:
-      - SPRING_PROFILES_ACTIVE=dev
-      - SPRING_DATASOURCE_URL=jdbc:mysql://db:3306/food_app
-      - SPRING_DATASOURCE_USERNAME=root
-      - SPRING_DATASOURCE_PASSWORD=password
-    networks:
-      - food-app-network
+      SPRING_PROFILES_ACTIVE: dev
+      DATABASE_HOST: mysql
+      DATABASE_PORT: 3306
+      DATABASE_USERNAME: root
+      DATABASE_PASSWORD: root
+      SPRING_DATA_REDIS_HOST: redis
+      SPRING_DATA_REDIS_PORT: 6379
     depends_on:
-      - db
+      mysql:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - default
 
-  db:
-    image: mysql:8.4.4
-    container_name: mysql-container
+  mysql:
+    image: mysql:8.0
+    container_name: mysql
+    restart: always
     environment:
-      - MYSQL_ROOT_PASSWORD=password
-      - MYSQL_DATABASE=food_app
+      MYSQL_DATABASE: food_app_db
+      MYSQL_ROOT_PASSWORD: root
     ports:
       - "3307:3306"
     volumes:
       - mysql-data:/var/lib/mysql
+      - ./initdb.sql:/docker-entrypoint-initdb.d/init.sql
     networks:
-      - food-app-network
+      - default
+    healthcheck:
+      test: [ "CMD", "mysqladmin", "ping", "-h", "localhost" ]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+
+  redis:
+    image: redis:7.4
+    container_name: redis
+    restart: always
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis-data:/data
+    networks:
+      - default
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
 
 networks:
-  food-app-network:
-    driver: bridge
+  default:
+    name: food-App-backend-service
 
 volumes:
   mysql-data:
+  redis-data:
