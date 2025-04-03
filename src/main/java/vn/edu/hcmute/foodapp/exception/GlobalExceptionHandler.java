@@ -15,6 +15,7 @@ import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.context.request.WebRequest;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
+import org.springframework.web.servlet.mvc.support.DefaultHandlerExceptionResolver;
 
 import java.sql.SQLException;
 import java.time.LocalDate;
@@ -146,15 +147,12 @@ public class GlobalExceptionHandler {
         return buildErrorResponse(HttpStatus.INTERNAL_SERVER_ERROR, "Redis Operation Error", e.getMessage(), request);
     }
 
-
     @ExceptionHandler(Exception.class)
     @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
     public ErrorResponse handleGeneralException(Exception e, WebRequest request) {
         log.error("Unknown error: {}", e.getMessage(), e);
         return buildErrorResponse(HttpStatus.INTERNAL_SERVER_ERROR, HttpStatus.INTERNAL_SERVER_ERROR.getReasonPhrase(), e.getMessage(), request);
     }
-
-
 
     private ErrorResponse buildErrorResponse(HttpStatus status, String error, String message, WebRequest request) {
         return ErrorResponse.builder()

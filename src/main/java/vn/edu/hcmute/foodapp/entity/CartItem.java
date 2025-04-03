@@ -17,6 +17,10 @@ public class CartItem extends AbstractEntity<Long>{
     @JoinColumn(name = "cart_id", referencedColumnName = "id")
     private Cart cart;
 
+    @ManyToOne
+    @JoinColumn(name = "menu_item_id", referencedColumnName = "id")
+    private MenuItem menuItem;
+
     @Column(name = "quantity")
     private Integer quantity;
 

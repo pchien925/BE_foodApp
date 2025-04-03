@@ -13,7 +13,6 @@ public class Branch extends AbstractEntity<Integer>{
     @Column(name = "name")
     private String name;
 
-
     @Column(name = "address")
     private String address;
 
@@ -21,7 +20,8 @@ public class Branch extends AbstractEntity<Integer>{
     private String phone;
 
     @Column(name = "is_active")
-    private boolean isActive;
+    @Builder.Default
+    private boolean isActive = true;
 
     @Column(name = "operating_hours")
     private String operatingHours;

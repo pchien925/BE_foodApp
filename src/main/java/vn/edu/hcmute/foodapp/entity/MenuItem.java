@@ -2,6 +2,7 @@ package vn.edu.hcmute.foodapp.entity;
 import jakarta.persistence.*;
 import lombok.*;
 
+import java.math.BigDecimal;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -16,8 +17,8 @@ public class MenuItem extends AbstractEntity<Long> {
     @Column(name = "name")
     private String name;
 
-    @Column(name = "base_price")
-    private Float basePrice;
+    @Column(name = "base_price", precision = 10, scale = 2)
+    private BigDecimal basePrice;
 
     @Column(name = "description")
     private String description;
@@ -26,10 +27,11 @@ public class MenuItem extends AbstractEntity<Long> {
     private String imageUrl;
 
     @Column(name = "is_available")
-    private Boolean isAvailable;
+    @Builder.Default
+    private Boolean isAvailable = true;
 
     @ManyToOne
-    @JoinColumn(name= "menuCategory_id", referencedColumnName = "id")
+    @JoinColumn(name= "menu_category_id", referencedColumnName = "id")
     private MenuCategory menuCategory;
 
     @OneToMany(mappedBy = "menuItem")
