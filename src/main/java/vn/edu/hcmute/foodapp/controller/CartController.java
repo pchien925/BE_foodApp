@@ -39,11 +39,10 @@ public class CartController {
                                                     @RequestParam(required = false) String sessionId,
                                                     @RequestBody AddCartItemRequest request) {
         log.info("Adding item to cart");
-        CartResponse response = cartService.addItemToCart(userId, sessionId, request);
         return ResponseData.<CartResponse>builder()
                 .status(HttpStatus.OK.value())
                 .message("Item added to cart successfully")
-                .data(response)
+                .data(cartService.addItemToCart(userId, sessionId, request))
                 .build();
     }
 }

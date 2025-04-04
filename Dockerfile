@@ -1,5 +1,5 @@
 FROM openjdk:21
-WORKDIR /app
-COPY target/foodApp-1.0.jar app.jar
+ARG JAR_FILE=target/*.jar
+COPY ${JAR_FILE} app.jar
 EXPOSE 9990
 ENTRYPOINT ["java", "-jar", "app.jar"]

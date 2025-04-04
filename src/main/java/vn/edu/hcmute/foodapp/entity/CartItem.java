@@ -19,7 +19,7 @@ public class CartItem extends AbstractEntity<Long>{
     @JoinColumn(name = "cart_id", referencedColumnName = "id")
     private Cart cart;
 
-    @OneToMany(mappedBy = "cartItem")
+    @OneToMany(mappedBy = "cartItem", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.EAGER)
     @Builder.Default
     private Set<CartItemOption> cartItemOptions = new HashSet<>();
 

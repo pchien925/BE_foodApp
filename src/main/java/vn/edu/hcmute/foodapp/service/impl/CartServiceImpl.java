@@ -13,10 +13,7 @@ import vn.edu.hcmute.foodapp.repository.*;
 import vn.edu.hcmute.foodapp.service.CartService;
 
 import java.math.BigDecimal;
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Service
@@ -31,6 +28,7 @@ public class CartServiceImpl implements CartService {
     private final MenuItemOptionRepository menuItemOptionRepository;
 
     @Override
+    @Transactional(readOnly = true)
     public CartResponse getCart(Long userId, String sessionId){
         log.info("Fetching cart for userId: {} and sessionId: {}", userId, sessionId);
         Cart cart = findOrCreateCart(userId, sessionId);
@@ -42,35 +40,31 @@ public class CartServiceImpl implements CartService {
 
     @Override
     @Transactional
-    public CartResponse addItemToCart(Long userId, String sessionId, AddCartItemRequest request){
+    public CartResponse addItemToCart(Long userId, String sessionId, AddCartItemRequest request) {
         log.info("Adding item to cart for userId: {} and sessionId: {}", userId, sessionId);
         Cart cart = findOrCreateCart(userId, sessionId);
 
         MenuItem menuItem = menuItemRepository.findById(request.getMenuItemId())
                 .orElseThrow(() -> new ResourceNotFoundException("MenuItem not found"));
 
-        // kiểm tra menu item option có đúng của menu item không
-        List<MenuItemOption> menuItemOptions =
-                validateAndGetSelectedOptions(request.getSelectedMenuItemOptionIds(), menuItem);
-
-        // tính giá trị priceAtAddition
+        List<MenuItemOption> menuItemOptions = validateAndGetSelectedOptions(request.getSelectedMenuItemOptionIds(), menuItem);
         BigDecimal priceAtAddition = calculatePriceAtAddition(menuItem, menuItemOptions);
 
-        // kiểm tra xem menu item option đã có trong cart chưa
         Optional<CartItem> existingCartItem = findExistingCartItem(cart, menuItem, menuItemOptions);
 
         if (existingCartItem.isPresent()) {
             CartItem cartItem = existingCartItem.get();
             cartItem.setQuantity(cartItem.getQuantity() + request.getQuantity());
             cartItemRepository.save(cartItem);
-        }
-        else {
+        } else {
             CartItem cartItem = CartItem.builder()
                     .cart(cart)
                     .menuItem(menuItem)
                     .quantity(request.getQuantity())
                     .priceAtAddition(priceAtAddition)
+                    .cartItemOptions(new HashSet<>())
                     .build();
+            cart.getCartItems().add(cartItem);
             CartItem savedCartItem = cartItemRepository.save(cartItem);
 
             List<CartItemOption> cartItemOptions = menuItemOptions.stream()
@@ -79,17 +73,14 @@ public class CartServiceImpl implements CartService {
                             .menuItemOption(option)
                             .build())
                     .toList();
+            savedCartItem.getCartItemOptions().addAll(cartItemOptions);
             cartItemOptionRepository.saveAll(cartItemOptions);
         }
 
-        Cart updatedCart = cartRepository.findById(cart.getId()).orElseThrow(
-                () -> new ResourceNotFoundException("Cart not found")
-        );
-
-        return CartMapper.INSTANCE.toResponse(updatedCart);
+        cart = cartRepository.findById(cart.getId())
+                .orElseThrow(() -> new ResourceNotFoundException("Cart not found"));
+        return CartMapper.INSTANCE.toResponse(cart);
     }
-
-
 
 
     private Cart findOrCreateCart(Long userId, String sessionId){
@@ -110,7 +101,7 @@ public class CartServiceImpl implements CartService {
             throw new IllegalArgumentException("Either userId or sessionId must be provided");
         }
         newCart.setCartItems(new HashSet<>());
-        return cartRepository.save(newCart);
+        return cartRepository.saveAndFlush(newCart);
     }
 
     private List<MenuItemOption> validateAndGetSelectedOptions(List<Integer> selectedMenuItemOptionIds, MenuItem menuItem) {
@@ -124,12 +115,17 @@ public class CartServiceImpl implements CartService {
             throw new ResourceNotFoundException("Some menu item options not found");
         }
 
+        Map<Option, String> optionMap = new HashMap<>();
+
         for (MenuItemOption option : menuItemOptions) {
             if (!menuItem.getMenuItemOptions().contains(option)) {
                 throw new ResourceNotFoundException("Menu item option not valid for this menu item");
             }
+            if (optionMap.containsKey(option.getOption())) {
+                throw new ResourceNotFoundException("Duplicate menu item option selected");
+            }
+            optionMap.put(option.getOption(), option.getValue());
         }
-
         return menuItemOptions;
     }
 

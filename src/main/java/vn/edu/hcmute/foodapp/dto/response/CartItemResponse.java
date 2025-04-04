@@ -5,6 +5,7 @@ import lombok.Getter;
 import lombok.Setter;
 
 import java.math.BigDecimal;
+import java.util.Set;
 
 @Getter
 @Setter
@@ -14,5 +15,5 @@ public class CartItemResponse {
     private Integer quantity;
     private BigDecimal priceAtAddition;
     private MenuItemResponse menuItem;
-    private MenuItemOptionResponse menuItemOption;
+    private Set<MenuItemOptionResponse> selectedOptions;
 }

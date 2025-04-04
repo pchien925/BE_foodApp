@@ -1,6 +1,5 @@
 package vn.edu.hcmute.foodapp.service.impl;
 
-import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.access.AccessDeniedException;
@@ -12,6 +11,7 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import vn.edu.hcmute.foodapp.dto.request.*;
 import vn.edu.hcmute.foodapp.dto.response.SendOtpResponse;
 import vn.edu.hcmute.foodapp.dto.response.TokenResponse;
@@ -104,6 +104,7 @@ public class AuthenticationServiceImpl implements AuthenticationService {
     }
 
     @Override
+    @Transactional
     public UserResponse signUp(SignUpRequest request){
         log.info("Sign up user");
         if (!request.getPassword().equals(request.getConfirmPassword())){

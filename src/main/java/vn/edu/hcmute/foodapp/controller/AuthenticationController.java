@@ -60,7 +60,7 @@ public class AuthenticationController {
         return ResponseData.<String>builder()
                 .status(HttpStatus.OK.value())
                 .message("Email verification successful")
-                .data("Verification link sent to " + request.getEmail())
+                .data("Email has been verified successfully")
                 .build();
     }
 
