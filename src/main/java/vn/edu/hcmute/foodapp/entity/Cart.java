@@ -13,13 +13,14 @@ import java.util.Set;
 @NoArgsConstructor
 @AllArgsConstructor
 public class Cart extends AbstractEntity<Long>{
-    @OneToOne
+    @OneToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id")
     private User user;
 
     @Column(name = "session_id")
     private String sessionId;
 
-    @OneToMany(mappedBy = "cart", cascade = CascadeType.ALL)
+    @OneToMany(mappedBy = "cart", cascade = CascadeType.ALL, orphanRemoval = true)
+    @Builder.Default
     private Set<CartItem> cartItems = new HashSet<>();
 }

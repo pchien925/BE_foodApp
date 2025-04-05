@@ -1,4 +1,5 @@
 package vn.edu.hcmute.foodapp.entity;
+
 import jakarta.persistence.*;
 import lombok.*;
 

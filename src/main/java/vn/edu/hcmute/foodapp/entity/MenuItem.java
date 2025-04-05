@@ -30,7 +30,7 @@ public class MenuItem extends AbstractEntity<Long> {
     @Builder.Default
     private Boolean isAvailable = true;
 
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name= "menu_category_id", referencedColumnName = "id")
     private MenuCategory menuCategory;
 

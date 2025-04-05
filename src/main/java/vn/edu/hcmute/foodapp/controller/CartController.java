@@ -8,6 +8,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 import vn.edu.hcmute.foodapp.dto.request.AddCartItemRequest;
+import vn.edu.hcmute.foodapp.dto.request.UpdateCartItemQuantityRequest;
 import vn.edu.hcmute.foodapp.dto.response.CartResponse;
 import vn.edu.hcmute.foodapp.dto.response.ResponseData;
 import vn.edu.hcmute.foodapp.service.CartService;
@@ -43,6 +44,45 @@ public class CartController {
                 .status(HttpStatus.OK.value())
                 .message("Item added to cart successfully")
                 .data(cartService.addItemToCart(userId, sessionId, request))
+                .build();
+    }
+
+    @PatchMapping("/items/{cartItemId}")
+    @Operation(summary = "Update item quantity", description = "Update the quantity of an item in the user's cart.")
+    public ResponseData<CartResponse> updateItemQuantity(@RequestParam(required = false) Long userId,
+                                                          @RequestParam(required = false) String sessionId,
+                                                          @PathVariable Long cartItemId,
+                                                          @RequestBody UpdateCartItemQuantityRequest request) {
+        log.info("Updating item quantity in cart");
+        return ResponseData.<CartResponse>builder()
+                .status(HttpStatus.OK.value())
+                .message("Item quantity updated successfully")
+                .data(cartService.updateItemQuantity(userId, sessionId, cartItemId, request))
+                .build();
+    }
+
+    @DeleteMapping("/items/{cartItemId}")
+    @Operation(summary = "Remove item from cart", description = "Remove an item from the user's cart.")
+    public ResponseData<CartResponse> removeItemFromCart(@RequestParam(required = false) Long userId,
+                                                          @RequestParam(required = false) String sessionId,
+                                                          @PathVariable Long cartItemId) {
+        log.info("Removing item from cart");
+        return ResponseData.<CartResponse>builder()
+                .status(HttpStatus.OK.value())
+                .message("Item removed from cart successfully")
+                .data(cartService.removeItemFromCart(userId, sessionId, cartItemId))
+                .build();
+    }
+
+    @DeleteMapping
+    @Operation(summary = "Clear cart", description = "Clear all items from the user's cart.")
+    public ResponseData<CartResponse> clearCart(@RequestParam(required = false) Long userId,
+                                                @RequestParam(required = false) String sessionId) {
+        log.info("Clearing cart");
+        return ResponseData.<CartResponse>builder()
+                .status(HttpStatus.OK.value())
+                .message("Cart cleared successfully")
+                .data(cartService.clearCart(userId, sessionId))
                 .build();
     }
 }

@@ -5,6 +5,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import vn.edu.hcmute.foodapp.dto.request.AddCartItemRequest;
+import vn.edu.hcmute.foodapp.dto.request.UpdateCartItemQuantityRequest;
 import vn.edu.hcmute.foodapp.dto.response.CartResponse;
 import vn.edu.hcmute.foodapp.entity.*;
 import vn.edu.hcmute.foodapp.exception.ResourceNotFoundException;
@@ -35,7 +36,7 @@ public class CartServiceImpl implements CartService {
         if (cart.getCartItems() == null) {
             cart.setCartItems(new HashSet<>());
         }
-        return CartMapper.INSTANCE.toResponse(cart);
+        return buildCartResponse(cart);
     }
 
     @Override
@@ -77,16 +78,67 @@ public class CartServiceImpl implements CartService {
             cartItemOptionRepository.saveAll(cartItemOptions);
         }
 
-        cart = cartRepository.findById(cart.getId())
+        Cart updatedCart = cartRepository.findById(cart.getId())
+                .orElseThrow(() -> new ResourceNotFoundException("Cart not found after clearing"));
+        return buildCartResponse(updatedCart);
+    }
+
+    @Override
+    @Transactional
+    public CartResponse updateItemQuantity(Long userId, String sessionId, Long cartItemId, UpdateCartItemQuantityRequest request) {
+        log.info("Updating item quantity in cart for userId: {} and sessionId: {}", userId, sessionId);
+        if (request.getQuantity() <= 0) {
+            return removeItemFromCart(userId, sessionId, cartItemId);
+        }
+        Cart cart = findCartByUserIdOrSessionId(userId, sessionId)
                 .orElseThrow(() -> new ResourceNotFoundException("Cart not found"));
-        return CartMapper.INSTANCE.toResponse(cart);
+        CartItem cartItem = cartItemRepository.findByCart_IdAndId(cart.getId(), cartItemId)
+                .orElseThrow(() -> new ResourceNotFoundException("CartItem not found"));
+
+        cartItem.setQuantity(request.getQuantity());
+        cartItemRepository.save(cartItem);
+
+        return buildCartResponse(cartRepository.findById(cart.getId())
+                .orElseThrow(() -> new ResourceNotFoundException("Cart not found")));
+    }
+
+    @Override
+    @Transactional
+    public CartResponse removeItemFromCart(Long userId, String sessionId, Long cartItemId) {
+        log.info("Removing item from cart for userId: {} and sessionId: {}", userId, sessionId);
+        Cart cart = findCartByUserIdOrSessionId(userId, sessionId)
+                .orElseThrow(() -> new ResourceNotFoundException("Cart not found"));
+
+        CartItem cartItem = cartItemRepository.findByCart_IdAndId(cart.getId(), cartItemId)
+                .orElseThrow(() -> new ResourceNotFoundException("CartItem not found"));
+
+        cart.getCartItems().remove(cartItem);
+        return buildCartResponse(cartRepository.save(cart));
+    }
+
+
+    @Transactional
+    @Override
+    public CartResponse clearCart(Long userId, String sessionId) {
+        log.info("Clearing cart for userId: {} and sessionId: {}", userId, sessionId);
+        Cart cart = findCartByUserIdOrSessionId(userId, sessionId)
+                .orElseThrow(() -> new ResourceNotFoundException("Cart not found"));
+        cart.getCartItems().clear();
+        cartRepository.save(cart);
+        return buildCartResponse(cart);
     }
 
 
     private Cart findOrCreateCart(Long userId, String sessionId){
         log.info("Finding or creating cart for userId: {} and sessionId: {}", userId, sessionId);
-        Optional<Cart> cartOptional = findCartByUserIdOrSessionId(userId, sessionId);
-        return cartOptional.orElseGet(() -> createNewCart(userId, sessionId));
+        if (userId == null && sessionId == null) {
+            throw new IllegalArgumentException("Either userId or sessionId must be provided");
+        }
+        if (!cartRepository.existsByUser_IdOrSessionId(userId, sessionId)) {
+            return createNewCart(userId, sessionId);
+        }
+        return findCartByUserIdOrSessionId(userId, sessionId)
+                .orElseThrow(() -> new ResourceNotFoundException("Cart not found"));
     }
 
     private Cart createNewCart(Long userId, String sessionId) {
@@ -101,7 +153,8 @@ public class CartServiceImpl implements CartService {
             throw new IllegalArgumentException("Either userId or sessionId must be provided");
         }
         newCart.setCartItems(new HashSet<>());
-        return cartRepository.saveAndFlush(newCart);
+
+        return cartRepository.save(newCart);
     }
 
     private List<MenuItemOption> validateAndGetSelectedOptions(List<Integer> selectedMenuItemOptionIds, MenuItem menuItem) {
@@ -109,32 +162,34 @@ public class CartServiceImpl implements CartService {
             return Collections.emptyList();
         }
 
-        List<MenuItemOption> menuItemOptions = menuItemOptionRepository.findAllById(selectedMenuItemOptionIds);
-
+        List<MenuItemOption> menuItemOptions = menuItemOptionRepository.findAllByIdsAndMenuItem_Id(selectedMenuItemOptionIds, menuItem.getId());
         if (menuItemOptions.size() != selectedMenuItemOptionIds.size()) {
-            throw new ResourceNotFoundException("Some menu item options not found");
+            Set<Integer> foundIds = menuItemOptions.stream().map(MenuItemOption::getId).collect(Collectors.toSet());
+            List<Integer> missingOrInvalidIds = selectedMenuItemOptionIds.stream().filter(id -> !foundIds.contains(id)).toList();
+            throw new ResourceNotFoundException("Invalid or non-existent MenuItemOption IDs for this MenuItem: " + missingOrInvalidIds);
         }
 
         Map<Option, String> optionMap = new HashMap<>();
-
         for (MenuItemOption option : menuItemOptions) {
-            if (!menuItem.getMenuItemOptions().contains(option)) {
-                throw new ResourceNotFoundException("Menu item option not valid for this menu item");
+            if (option.getOption() == null) {
+                log.warn("MenuItemOption ID {} has null Option entity.", option.getId());
+                throw new IllegalStateException("Data inconsistency: MenuItemOption ID " + option.getId() + " is missing its Option relation.");
             }
             if (optionMap.containsKey(option.getOption())) {
-                throw new ResourceNotFoundException("Duplicate menu item option selected");
+                throw new IllegalArgumentException("Duplicate option type selected for: " + option.getOption().getName());
             }
             optionMap.put(option.getOption(), option.getValue());
         }
+
         return menuItemOptions;
     }
 
 
     private Optional<Cart> findCartByUserIdOrSessionId(Long userId, String sessionId) {
         if (userId != null) {
-            return cartRepository.findByUser_Id(userId);
+            return cartRepository.findFullCartByUser_Id(userId);
         } else if (sessionId != null && !sessionId.isBlank()) {
-            return cartRepository.findBySessionId(sessionId);
+            return cartRepository.findByFullCartSessionId(sessionId);
         }
         return Optional.empty();
     }
@@ -159,5 +214,22 @@ public class CartServiceImpl implements CartService {
             totalPrice = totalPrice.add(option.getAdditionalPrice());
         }
         return totalPrice;
+    }
+
+    private BigDecimal calculateTotalPrice(Cart cart) {
+        if (cart.getCartItems() == null || cart.getCartItems().isEmpty()) {
+            return BigDecimal.ZERO;
+        }
+        return cart.getCartItems().stream()
+                .map(cartItem -> cartItem.getPriceAtAddition()
+                        .multiply(BigDecimal.valueOf(cartItem.getQuantity())))
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+    }
+
+    //Build response với totalPrice
+    private CartResponse buildCartResponse(Cart cart) {
+        CartResponse response = CartMapper.INSTANCE.toResponse(cart);
+        response.setTotalPrice(calculateTotalPrice(cart));
+        return response;
     }
 }
