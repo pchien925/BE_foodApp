@@ -9,6 +9,8 @@ import org.springframework.lang.Nullable;
 import org.springframework.stereotype.Repository;
 import vn.edu.hcmute.foodapp.entity.MenuItem;
 
+import java.util.Collection;
+
 @Repository
 public interface MenuItemRepository extends JpaRepository<MenuItem, Long> {
 

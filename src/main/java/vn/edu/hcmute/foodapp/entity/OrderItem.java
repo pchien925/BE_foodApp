@@ -3,6 +3,7 @@ import jakarta.persistence.*;
 import lombok.*;
 
 import java.math.BigDecimal;
+import java.util.Set;
 
 
 @Entity
@@ -21,9 +22,6 @@ public class OrderItem extends AbstractEntity<Long>{
     @JoinColumn(name = "menu_item_id", referencedColumnName = "id")
     private MenuItem menuItem;
 
-    @Column(name = "menu_item_name")
-    private String menuItemName;
-
     @Column(name = "quantity")
     private Integer quantity;
 
@@ -32,4 +30,7 @@ public class OrderItem extends AbstractEntity<Long>{
 
     @Column(name = "total_price", precision = 10, scale = 2)
     private BigDecimal totalPrice;
+
+    @OneToMany(mappedBy = "orderItem", cascade = CascadeType.ALL, orphanRemoval = true)
+    private Set<OrderItemOption> options;
 }

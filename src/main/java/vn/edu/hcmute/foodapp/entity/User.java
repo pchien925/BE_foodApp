@@ -55,7 +55,7 @@ public class User extends AbstractEntity<Long> implements UserDetails {
     @Builder.Default
     private Integer loyaltyPointsBalance = 0;
 
-    @OneToMany(mappedBy = "user", cascade = {CascadeType.PERSIST, CascadeType.MERGE})
+    @OneToMany(mappedBy = "user", cascade = {CascadeType.PERSIST, CascadeType.MERGE}, fetch = FetchType.EAGER)
     @Builder.Default
     private Set<UserHasRole> roles = new HashSet<>();
 

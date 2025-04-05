@@ -1,7 +1,12 @@
 package vn.edu.hcmute.foodapp.service.impl;
 
+import io.jsonwebtoken.Jwts;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.boot.autoconfigure.security.oauth2.resource.OAuth2ResourceServerProperties;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContext;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import vn.edu.hcmute.foodapp.dto.request.AddCartItemRequest;
@@ -29,9 +34,14 @@ public class CartServiceImpl implements CartService {
     private final MenuItemOptionRepository menuItemOptionRepository;
 
     @Override
-    @Transactional(readOnly = true)
+    @Transactional
     public CartResponse getCart(Long userId, String sessionId){
         log.info("Fetching cart for userId: {} and sessionId: {}", userId, sessionId);
+
+//        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+//        User user = (User) authentication.getPrincipal();
+//        log.info("user id : {}", user.getId());
+
         Cart cart = findOrCreateCart(userId, sessionId);
         if (cart.getCartItems() == null) {
             cart.setCartItems(new HashSet<>());

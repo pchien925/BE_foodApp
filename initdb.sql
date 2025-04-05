@@ -197,8 +197,7 @@ create table tbl_order_item
         primary key,
     menu_item_id   bigint         null,
     order_id       bigint         null,
-    updated_at     datetime(6)    null,
-    menu_item_name varchar(255)   null
+    updated_at     datetime(6)    null
 );
 
 alter table tbl_order_item

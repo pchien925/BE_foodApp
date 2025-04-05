@@ -9,7 +9,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 import vn.edu.hcmute.foodapp.dto.request.BranchRequest;
-import vn.edu.hcmute.foodapp.dto.response.BranchResponse;
+import vn.edu.hcmute.foodapp.dto.response.BranchDetailsResponse;
 import vn.edu.hcmute.foodapp.dto.response.PageResponse;
 import vn.edu.hcmute.foodapp.dto.response.ResponseData;
 import vn.edu.hcmute.foodapp.service.BranchService;
@@ -25,9 +25,9 @@ public class BranchController {
 
     @GetMapping("/{id}")
     @Operation(summary = "Get branch by ID", description = "Retrieve a branch by its ID")
-    public ResponseData<BranchResponse> getBranchById(@PathVariable("id") Integer id) {
+    public ResponseData<BranchDetailsResponse> getBranchById(@PathVariable("id") Integer id) {
         log.info("Get branch request for id: {}", id);
-        return ResponseData.<BranchResponse>builder()
+        return ResponseData.<BranchDetailsResponse>builder()
                 .status(HttpStatus.OK.value())
                 .message("Branch retrieved successfully")
                 .data(branchService.getBranchById(id))
@@ -36,9 +36,9 @@ public class BranchController {
 
     @PostMapping
     @Operation(summary = "Create a new branch", description = "Create a new branch with provided details")
-    public ResponseData<BranchResponse> createBranch(@RequestBody @Valid BranchRequest request) {
+    public ResponseData<BranchDetailsResponse> createBranch(@RequestBody @Valid BranchRequest request) {
         log.info("Create branch request: {}", request);
-        return ResponseData.<BranchResponse>builder()
+        return ResponseData.<BranchDetailsResponse>builder()
                 .status(HttpStatus.CREATED.value())
                 .message("Branch created successfully")
                 .data(branchService.createBranch(request))
@@ -47,11 +47,11 @@ public class BranchController {
 
     @PutMapping("/{id}")
     @Operation(summary = "Update a branch", description = "Update an existing branch by its ID")
-    public ResponseData<BranchResponse> updateBranch(
+    public ResponseData<BranchDetailsResponse> updateBranch(
             @PathVariable("id") Integer id,
             @RequestBody @Valid BranchRequest request) {
         log.info("Update branch request for id: {}", id);
-        return ResponseData.<BranchResponse>builder()
+        return ResponseData.<BranchDetailsResponse>builder()
                 .status(HttpStatus.OK.value())
                 .message("Branch updated successfully")
                 .data(branchService.updateBranch(id, request))
@@ -71,13 +71,13 @@ public class BranchController {
 
     @GetMapping
     @Operation(summary = "Get all branches", description = "Retrieve a paginated list of all branches")
-    public ResponseData<PageResponse<BranchResponse>> getAllBranches(
+    public ResponseData<PageResponse<BranchDetailsResponse>> getAllBranches(
             @RequestParam(defaultValue = "1") int page,
             @RequestParam(defaultValue = "10") int size,
             @RequestParam(defaultValue = "id") String sort,
             @RequestParam(defaultValue = "asc") String direction) {
         log.info("Get all branches request: page={}, size={}, sort={}, direction={}", page, size, sort, direction);
-        return ResponseData.<PageResponse<BranchResponse>>builder()
+        return ResponseData.<PageResponse<BranchDetailsResponse>>builder()
                 .status(HttpStatus.OK.value())
                 .message("Branches retrieved successfully")
                 .data(branchService.getBranches(page, size, sort, direction))
@@ -86,14 +86,14 @@ public class BranchController {
 
     @GetMapping("/search")
     @Operation(summary = "Search branches", description = "Search branches by keyword with pagination")
-    public ResponseData<PageResponse<BranchResponse>> searchBranches(
+    public ResponseData<PageResponse<BranchDetailsResponse>> searchBranches(
             @Parameter(description = "Keyword to search in name or description") @RequestParam String keyword,
             @RequestParam(defaultValue = "1") int page,
             @RequestParam(defaultValue = "10") int size,
             @RequestParam(defaultValue = "id") String sort,
             @RequestParam(defaultValue = "asc") String direction) {
         log.info("Search branches request with keyword: {}", keyword);
-        return ResponseData.<PageResponse<BranchResponse>>builder()
+        return ResponseData.<PageResponse<BranchDetailsResponse>>builder()
                 .status(HttpStatus.OK.value())
                 .message("Branches search completed successfully")
                 .data(branchService.searchBranches(keyword, page, size, sort, direction))

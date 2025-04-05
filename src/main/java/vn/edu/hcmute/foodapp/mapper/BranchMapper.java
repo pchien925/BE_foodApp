@@ -6,7 +6,7 @@ import org.mapstruct.MappingTarget;
 import org.mapstruct.ReportingPolicy;
 import org.mapstruct.factory.Mappers;
 import vn.edu.hcmute.foodapp.dto.request.BranchRequest;
-import vn.edu.hcmute.foodapp.dto.response.BranchResponse;
+import vn.edu.hcmute.foodapp.dto.response.BranchDetailsResponse;
 import vn.edu.hcmute.foodapp.entity.Branch;
 
 @Mapper(unmappedTargetPolicy = ReportingPolicy.IGNORE)
@@ -15,7 +15,7 @@ public interface BranchMapper {
 
     Branch toEntity(BranchRequest branchRequest);
 
-    BranchResponse toResponse(Branch branch);
+    BranchDetailsResponse toResponse(Branch branch);
 
     @Mapping(target = "id", ignore = true)
     void update(BranchRequest branchRequest, @MappingTarget Branch branch);

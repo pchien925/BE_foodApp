@@ -6,7 +6,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import vn.edu.hcmute.foodapp.dto.request.BranchRequest;
-import vn.edu.hcmute.foodapp.dto.response.BranchResponse;
+import vn.edu.hcmute.foodapp.dto.response.BranchDetailsResponse;
 import vn.edu.hcmute.foodapp.dto.response.PageResponse;
 import vn.edu.hcmute.foodapp.entity.Branch;
 import vn.edu.hcmute.foodapp.exception.ResourceNotFoundException;
@@ -22,7 +22,7 @@ public class BranchServiceImpl implements BranchService {
     private final BranchRepository branchRepository;
 
     @Override
-    public BranchResponse createBranch(BranchRequest request) {
+    public BranchDetailsResponse createBranch(BranchRequest request) {
         log.info("Create branch with name: {}", request.getName());
         Branch branch = BranchMapper.INSTANCE.toEntity(request);
 
@@ -30,7 +30,7 @@ public class BranchServiceImpl implements BranchService {
     }
 
     @Override
-    public BranchResponse updateBranch(Integer id, BranchRequest request) {
+    public BranchDetailsResponse updateBranch(Integer id, BranchRequest request) {
         log.info("Update branch with id: {}", id);
         Branch branch = branchRepository.findById(id).orElseThrow(() -> new ResourceNotFoundException("Branch not found"));
         BranchMapper.INSTANCE.update(request, branch);
@@ -46,7 +46,7 @@ public class BranchServiceImpl implements BranchService {
     }
 
     @Override
-    public BranchResponse getBranchById(Integer id) {
+    public BranchDetailsResponse getBranchById(Integer id) {
         log.info("Get branch with id: {}", id);
         Branch branch = branchRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Branch not found with id: " + id));
@@ -54,12 +54,12 @@ public class BranchServiceImpl implements BranchService {
     }
 
     @Override
-    public PageResponse<BranchResponse> getBranches(int page, int size, String sort, String direction) {
+    public PageResponse<BranchDetailsResponse> getBranches(int page, int size, String sort, String direction) {
         log.info("Fetching all branches with pagination: page={}, size={}, sort={}, direction={}", page, size, sort, direction);
         Pageable pageable = PaginationUtil.createPageable(page, size, sort, direction);
 
         Page<Branch> branchPage = branchRepository.findAll(pageable);
-        return PageResponse.<BranchResponse>builder()
+        return PageResponse.<BranchDetailsResponse>builder()
                 .currentPage(page)
                 .pageSize(size)
                 .totalPages(branchPage.getTotalPages())
@@ -69,12 +69,12 @@ public class BranchServiceImpl implements BranchService {
     }
 
     @Override
-    public PageResponse<BranchResponse> searchBranches(String keyword, int page, int size, String sort, String direction) {
+    public PageResponse<BranchDetailsResponse> searchBranches(String keyword, int page, int size, String sort, String direction) {
         log.info("Searching doctors with keyword: {}, page={}, size={}, sort={}, direction={}", keyword, page, size, sort, direction);
         Pageable pageable = PaginationUtil.createPageable(page, size, sort, direction);
 
         Page<Branch> branchPage = branchRepository.searchBranches(keyword, pageable);
-        return PageResponse.<BranchResponse>builder()
+        return PageResponse.<BranchDetailsResponse>builder()
                 .currentPage(page)
                 .pageSize(size)
                 .totalPages(branchPage.getTotalPages())

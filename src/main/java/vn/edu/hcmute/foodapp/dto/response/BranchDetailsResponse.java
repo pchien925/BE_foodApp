@@ -4,10 +4,12 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.Setter;
 
+import java.time.LocalDateTime;
+
 @Getter
 @Setter
 @Builder
-public class BranchResponse {
+public class BranchDetailsResponse {
     private Integer id;
 
     private String name;
@@ -19,4 +21,8 @@ public class BranchResponse {
     private boolean isActive;
 
     private String operatingHours;
+
+    private LocalDateTime createdAt;
+
+    private LocalDateTime updatedAt;
 }
