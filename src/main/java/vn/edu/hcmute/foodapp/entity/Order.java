@@ -17,7 +17,7 @@ import java.util.Set;
 @NoArgsConstructor
 @AllArgsConstructor
 public class Order extends AbstractEntity<Long>{
-    @Column(name = "order_code")
+    @Column(name = "order_code", unique = true)
     private String orderCode;
 
     @ManyToOne
