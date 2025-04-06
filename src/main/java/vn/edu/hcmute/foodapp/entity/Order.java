@@ -52,4 +52,11 @@ public class Order extends AbstractEntity<Long>{
     @OneToMany(mappedBy = "order", cascade = CascadeType.ALL)
     @Builder.Default
     private Set<Shipment> shipments = new HashSet<>();
+
+    @OneToMany(mappedBy = "order", cascade = CascadeType.ALL)
+    @Builder.Default
+    private Set<Payment> payments = new HashSet<>();
+
+    @OneToOne(mappedBy = "order", cascade = CascadeType.ALL)
+    private LoyaltyPointTransaction loyaltyTransaction;
 }

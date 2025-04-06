@@ -26,6 +26,14 @@ import java.util.stream.Collectors;
 @RestControllerAdvice
 @Slf4j
 public class GlobalExceptionHandler {
+
+    @ExceptionHandler(OrderCreationFailedException.class)
+    @ResponseStatus(HttpStatus.CONFLICT)
+    public ErrorResponse handleOrderCreationFailedException(OrderCreationFailedException e, WebRequest request) {
+        log.warn("Order creation failed: {}", e.getMessage());
+        return buildErrorResponse(HttpStatus.CONFLICT, "Order Creation Failed", e.getMessage(), request);
+    }
+
     @ExceptionHandler(MethodArgumentTypeMismatchException.class)
     @ResponseStatus(HttpStatus.BAD_REQUEST)
     public ErrorResponse handleMethodArgumentTypeMismatchException(MethodArgumentTypeMismatchException e, WebRequest request) {

@@ -35,9 +35,9 @@ public class OrderDetailsResponse {
 
     private Set<OrderItemResponse> items;
 
-    private PaymentInfoResponse paymentInfo;
+    private Set<PaymentInfoResponse> paymentInfos;
 
-    private ShipmentInfoResponse shipmentInfo;
+    private Set<ShipmentInfoResponse> shipmentInfo;
 
     private Integer pointsEarnedOrSpent;
 

@@ -2,22 +2,28 @@ package vn.edu.hcmute.foodapp.service.impl;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import vn.edu.hcmute.foodapp.dto.request.CreateOrderRequest;
-import vn.edu.hcmute.foodapp.dto.response.OrderInfoResponse; // Đảm bảo import đúng
+import vn.edu.hcmute.foodapp.dto.response.*;
 import vn.edu.hcmute.foodapp.entity.*;
 import vn.edu.hcmute.foodapp.exception.InvalidDataException; // Nên dùng
+import vn.edu.hcmute.foodapp.exception.OrderCreationFailedException;
 import vn.edu.hcmute.foodapp.exception.ResourceNotFoundException;
 import vn.edu.hcmute.foodapp.mapper.OrderMapper;
 import vn.edu.hcmute.foodapp.repository.*;
 import vn.edu.hcmute.foodapp.service.OrderService;
+import vn.edu.hcmute.foodapp.util.PaginationUtil;
 import vn.edu.hcmute.foodapp.util.enumeration.EOrderStatus;
 
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import java.util.Set;
 
 @Service
@@ -76,7 +82,7 @@ public class OrderServiceImpl implements OrderService {
 
             if (!menuItem.getIsAvailable()) {
                 log.warn("Item '{}' (ID: {}) is no longer available. Skipping item.", menuItem.getName(), menuItem.getId());
-                continue;
+                throw new OrderCreationFailedException("Item '" + menuItem.getName() + "' is no longer available.");
             }
 
             BigDecimal itemBasePrice = cartItem.getPriceAtAddition();
@@ -114,20 +120,28 @@ public class OrderServiceImpl implements OrderService {
                     MenuItemOption menuItemOption = menuItemOptionRepository.findById(cartItemOption.getMenuItemOption().getId())
                             .orElseThrow(() -> new ResourceNotFoundException("Menu item option referenced in cart not found (ID: " + cartItemOption.getMenuItemOption().getId() + ")"));
 
+                    BigDecimal originalOptionPrice = menuItemOption.getAdditionalPrice();
+                    BigDecimal effectiveOptionPrice = Objects.requireNonNullElse(originalOptionPrice, BigDecimal.ZERO);
+                    if (originalOptionPrice == null) {
+                        log.warn("MenuItemOption ID {} ('{}' - '{}') has null additionalPrice. Treating as BigDecimal.ZERO.",
+                                menuItemOption.getId(),
+                                menuItemOption.getOption().getName(),
+                                menuItemOption.getValue());
+                    }
+
                     // Tạo OrderItemOption
                     OrderItemOption orderItemOption = OrderItemOption.builder()
                             .orderItem(orderItem)
                             .optionName(menuItemOption.getOption().getName())
                             .optionValue(menuItemOption.getValue())
-                            .additionalPrice(menuItemOption.getAdditionalPrice())
+                            .additionalPrice(effectiveOptionPrice)
                             .build();
 
                     orderItemOptionRepository.save(orderItemOption);
 
-                    if (orderItemOption.getAdditionalPrice() != null) {
-                        itemOptionsTotal = itemOptionsTotal.add(orderItemOption.getAdditionalPrice());
-                    }
+                    itemOptionsTotal = itemOptionsTotal.add(effectiveOptionPrice);
                 }
+
 
                 orderItem.setTotalPrice(orderItemBaseTotal.add(itemOptionsTotal));
                 orderItem = orderItemRepository.save(orderItem);
@@ -135,7 +149,6 @@ public class OrderServiceImpl implements OrderService {
             }
             finalOrderTotalPrice = finalOrderTotalPrice.add(orderItem.getTotalPrice());
             log.debug("Current finalOrderTotalPrice after adding Item ID {}: {}", orderItem.getId(), finalOrderTotalPrice);
-
         }
 
         order.setTotalPrice(finalOrderTotalPrice);
@@ -144,10 +157,49 @@ public class OrderServiceImpl implements OrderService {
 
         clearCartItemsAfterOrder(cart, userId, order.getId());
 
-        OrderInfoResponse response = OrderMapper.INSTANCE.toOrderInfoResponse(order);
+        OrderInfoResponse response = OrderMapper.INSTANCE.toInfoResponse(order);
         log.info("Order creation process completed successfully for Order ID: {}", order.getId());
         return response;
     }
+
+
+    @Transactional(readOnly = true)
+    @Override
+    public PageResponse<OrderSummaryResponse> getUserOrders(Long userId, int page, int size, String sort, String direction, EOrderStatus statusFilter){
+        log.info("Retrieving orders for user ID: {} with status filter: {}", userId, statusFilter);
+        Pageable pageable = PaginationUtil.createPageable(page, size, sort, direction);
+
+        Page<Order> orderPage = orderRepository.findByUser_IdAndOrderStatus(userId, statusFilter, pageable);
+
+        return PageResponse.<OrderSummaryResponse>builder()
+                .currentPage(page)
+                .pageSize(size)
+                .totalPages(orderPage.getTotalPages())
+                .totalElements(orderPage.getTotalElements())
+                .content(orderPage.getContent().stream()
+                        .map(OrderMapper.INSTANCE::toSummaryResponse)
+                        .toList())
+                .build();
+
+    }
+
+    @Transactional(readOnly = true)
+    @Override
+    public OrderDetailsResponse getOrderDetailForUser(Long userId, Long orderId) {
+        log.debug("Fetching order detail for order ID: {} for user ID: {}", orderId, userId);
+        Order order = orderRepository.findOrderWithDetailsById(orderId)
+                .orElseThrow(() -> new ResourceNotFoundException("Order not found with ID: " + orderId));
+
+        // Kiểm tra quyền truy cập của user
+        if (!order.getUser().getId().equals(userId)) {
+            log.warn("Access denied for user ID: {} trying to access order ID: {}", userId, orderId);
+            throw new AccessDeniedException("You do not have permission to view this order.");
+        }
+
+        log.info("Order detail found for order ID: {} for user ID: {}", orderId, userId);
+        return OrderMapper.INSTANCE.toDetailsResponse(order);
+    }
+
 
     // Hàm helper để xóa giỏ hàng một cách an toàn
     private void clearCartItemsAfterOrder(Cart cart, Long userId, Long orderId) {
