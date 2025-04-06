@@ -12,7 +12,7 @@ import vn.edu.hcmute.foodapp.util.enumeration.EOrderStatus;
 @RestController
 @RequestMapping("/api/v1/orders")
 @RequiredArgsConstructor
-@Tag(name = "Order", description = "Order API for managing orders")
+@Tag(name = "Order", description = "Order API for authenticated users")
 @Slf4j(topic = "ORDER_CONTROLLER")
 public class OrderController {
     private final OrderService orderService;
@@ -52,4 +52,15 @@ public class OrderController {
                 .message("Orders retrieved successfully")
                 .build();
     }
+
+    @PatchMapping("/{id}/cancel")
+    public ResponseData<OrderInfoResponse> cancelOrder(@PathVariable Long id, @RequestParam Long userId) {
+        log.info("Authenticated user ID: {} attempting to cancel order ID: {}", userId, id);
+        OrderInfoResponse orderInfoResponse = orderService.cancelOrder(userId, id);
+        return ResponseData.<OrderInfoResponse>builder()
+                .data(orderInfoResponse)
+                .message("Order cancelled successfully")
+                .build();
+    }
+
 }

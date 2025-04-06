@@ -27,6 +27,13 @@ import java.util.stream.Collectors;
 @Slf4j
 public class GlobalExceptionHandler {
 
+    @ExceptionHandler(InvalidActionException.class)
+    @ResponseStatus(HttpStatus.CONFLICT)
+    public ErrorResponse handleInvalidActionException(InvalidActionException e, WebRequest request) {
+        log.warn("Invalid action: {}", e.getMessage());
+        return buildErrorResponse(HttpStatus.CONFLICT, "Invalid Action", e.getMessage(), request);
+    }
+
     @ExceptionHandler(OrderCreationFailedException.class)
     @ResponseStatus(HttpStatus.CONFLICT)
     public ErrorResponse handleOrderCreationFailedException(OrderCreationFailedException e, WebRequest request) {

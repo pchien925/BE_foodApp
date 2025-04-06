@@ -8,8 +8,10 @@ import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import vn.edu.hcmute.foodapp.dto.request.CreateOrderRequest;
+import vn.edu.hcmute.foodapp.dto.request.UpdateOrderStatusRequest;
 import vn.edu.hcmute.foodapp.dto.response.*;
 import vn.edu.hcmute.foodapp.entity.*;
+import vn.edu.hcmute.foodapp.exception.InvalidActionException;
 import vn.edu.hcmute.foodapp.exception.InvalidDataException; // Nên dùng
 import vn.edu.hcmute.foodapp.exception.OrderCreationFailedException;
 import vn.edu.hcmute.foodapp.exception.ResourceNotFoundException;
@@ -200,6 +202,163 @@ public class OrderServiceImpl implements OrderService {
         return OrderMapper.INSTANCE.toDetailsResponse(order);
     }
 
+    @Override
+    @Transactional
+    public OrderInfoResponse cancelOrder(Long userId, Long orderId) {
+        log.info("User ID: {} attempting to cancel order ID: {}", userId, orderId);
+        Order order = orderRepository.findById(orderId)
+                .orElseThrow(() -> new ResourceNotFoundException("Order not found with ID: " + orderId));
+
+        // Xác thực chủ sở hữu
+        if (!order.getUser().getId().equals(userId)) {
+            log.warn("Access denied for user ID: {} trying to cancel order ID: {}", userId, orderId);
+            throw new AccessDeniedException("You do not have permission to cancel this order.");
+        }
+
+        // Kiểm tra trạng thái cho phép hủy (ví dụ: chỉ PENDING)
+        if (order.getOrderStatus() != EOrderStatus.PENDING) {
+            log.warn("Order ID: {} cannot be cancelled because its status is {}", orderId, order.getOrderStatus());
+            throw new InvalidActionException("Order cannot be cancelled in its current state: " + order.getOrderStatus());
+        }
+
+        order.setOrderStatus(EOrderStatus.CANCELLED);
+        // Thêm logic khác nếu cần:
+        // - Hoàn điểm loyalty nếu đã sử dụng điểm cho đơn này
+        // - Hủy các giao dịch thanh toán liên quan (nếu đã tạo và chưa xử lý)
+        // - Thông báo cho chi nhánh/hệ thống
+        // Ví dụ: handleLoyaltyPointReversal(order);
+        // Ví dụ: cancelPendingPayments(order);
+
+        Order updatedOrder = orderRepository.save(order);
+        log.info("Order ID: {} cancelled successfully by user ID: {}", orderId, userId);
+        return OrderMapper.INSTANCE.toInfoResponse(updatedOrder);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public PageResponse<OrderSummaryResponse> getAllOrdersAdmin(int page, int size, String sort, String direction,
+                                                                EOrderStatus statusFilter, Long userIdFilter,
+                                                                Integer branchIdFilter, String orderCodeFilter) {
+        log.info("Admin request: Get all orders with filters - Status: {}, UserID: {}, BranchID: {}, Code: {}",
+                statusFilter, userIdFilter, branchIdFilter, orderCodeFilter);
+
+        Pageable pageable = PaginationUtil.createPageable(page, size, sort, direction);
+
+        // Gọi trực tiếp phương thức repository với các tham số filter
+        Page<Order> orderPage = orderRepository.findOrdersAdminWithFilters(
+                statusFilter,
+                userIdFilter,
+                branchIdFilter,
+                // Xử lý chuỗi rỗng thành null nếu cần, nếu không query LIKE sẽ tìm ""
+                (orderCodeFilter != null && orderCodeFilter.isBlank()) ? null : orderCodeFilter,
+                pageable
+        );
+
+        return PageResponse.<OrderSummaryResponse>builder()
+                .currentPage(page) // hoặc orderPage.getNumber() + 1 nếu page của bạn là 1-based
+                .pageSize(size)    // hoặc orderPage.getSize()
+                .totalPages(orderPage.getTotalPages())
+                .totalElements(orderPage.getTotalElements())
+                .content(orderPage.getContent().stream()
+                        .map(OrderMapper.INSTANCE::toSummaryResponse)
+                        .toList())
+                .build();
+    }
+
+    @Override
+    @Transactional
+    public OrderInfoResponse updateOrderStatusAdmin(Long orderId, UpdateOrderStatusRequest request) {
+        log.info("Admin request: Update status for order ID: {} to {}", orderId, request.getStatus());
+        Order order = orderRepository.findById(orderId)
+                .orElseThrow(() -> new ResourceNotFoundException("Order not found with ID: " + orderId));
+
+        EOrderStatus oldStatus = order.getOrderStatus();
+        EOrderStatus newStatus = request.getStatus();
+
+        // Validate luồng chuyển trạng thái (ví dụ đơn giản)
+        if (!isValidStatusTransition(oldStatus, newStatus)) {
+            log.warn("Invalid status transition attempt for order ID: {} from {} to {}", orderId, oldStatus, newStatus);
+            throw new InvalidActionException("Cannot change order status from " + oldStatus + " to " + newStatus);
+        }
+
+        order.setOrderStatus(newStatus);
+
+        // Trigger các hành động phụ thuộc vào trạng thái mới
+        triggerActionsForStatus(order, oldStatus, newStatus, request.getReason());
+
+        Order updatedOrder = orderRepository.save(order);
+        log.info("Admin successfully updated status for order ID: {} from {} to {}", orderId, oldStatus, newStatus);
+        return OrderMapper.INSTANCE.toInfoResponse(updatedOrder);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public OrderDetailsResponse getOrderDetailsAdmin(Long orderId) {
+        log.info("Admin request: Get details for order ID: {}", orderId);
+        // Dùng lại method fetch join nhưng không cần check userId
+        Order order = orderRepository.findOrderWithDetailsById(orderId)
+                .orElseThrow(() -> new ResourceNotFoundException("Order not found with ID: " + orderId));
+
+        log.info("Admin retrieved details for order ID: {}", orderId);
+        // Map sang DTO, bao gồm cả thông tin shipment, payment, loyalty nếu có
+        return OrderMapper.INSTANCE.toDetailsResponse(order); // Cần cập nhật Mapper
+    }
+
+    private boolean isValidStatusTransition(EOrderStatus oldStatus, EOrderStatus newStatus) {
+        if (oldStatus == newStatus) return true; // Cho phép cập nhật cùng trạng thái (nếu cần)
+
+        // Chỉ cho phép chuyển từ PENDING sang các trạng thái khác (trừ COMPLETED trực tiếp?)
+        if (oldStatus == EOrderStatus.PENDING) {
+            return newStatus == EOrderStatus.IN_PROGRESS || newStatus == EOrderStatus.CANCELLED;
+        }
+        // Từ IN_PROGRESS có thể sang COMPLETED, CANCELLED (hoặc các trạng thái giao hàng)
+        if (oldStatus == EOrderStatus.IN_PROGRESS) {
+            // Tùy vào luồng nghiệp vụ của bạn, ví dụ có qua các bước giao hàng không
+            return newStatus == EOrderStatus.COMPLETED || newStatus == EOrderStatus.CANCELLED /* || newStatus == EOrderStatus.OUT_FOR_DELIVERY */;
+        }
+        // Đơn đã COMPLETED hoặc CANCELLED thì không đổi được nữa
+        if (oldStatus == EOrderStatus.COMPLETED || oldStatus == EOrderStatus.CANCELLED) {
+            return false;
+        }
+        // Thêm các luật khác nếu cần (ví dụ: liên quan đến trạng thái giao hàng)
+        return true; // Mặc định cho phép nếu không rơi vào các trường hợp cấm
+    }
+
+    private void triggerActionsForStatus(Order order, EOrderStatus oldStatus, EOrderStatus newStatus, String reason) {
+        if (oldStatus == newStatus) return;
+
+        // Ví dụ: Khi đơn hàng hoàn thành (COMPLETED)
+        if (newStatus == EOrderStatus.COMPLETED) {
+            log.debug("Order ID: {} completed. Triggering post-completion actions.", order.getId());
+            // Cộng điểm Loyalty
+            // completeLoyaltyTransaction(order);
+            // Cập nhật trạng thái Shipment cuối cùng (DELIVERED)
+            // updateFinalShipmentStatus(order);
+            // Gửi thông báo hoàn thành cho user
+            // sendCompletionNotification(order);
+        }
+        // Ví dụ: Khi đơn hàng bị hủy (CANCELLED)
+        else if (newStatus == EOrderStatus.CANCELLED) {
+            log.debug("Order ID: {} cancelled. Triggering cancellation actions. Reason: {}", order.getId(), reason);
+            // Hoàn điểm Loyalty nếu cần
+            // handleLoyaltyPointReversalOnCancel(order);
+            // Hủy thanh toán đang chờ
+            // cancelPendingPayments(order);
+            // Cập nhật trạng thái Shipment (FAILED_ATTEMPT hoặc tương tự)
+            // updateShipmentOnCancel(order);
+            // Gửi thông báo hủy cho user
+            // sendCancellationNotification(order, reason);
+        }
+        // Ví dụ: Khi đơn hàng bắt đầu xử lý (IN_PROGRESS)
+        else if (newStatus == EOrderStatus.IN_PROGRESS && oldStatus == EOrderStatus.PENDING) {
+            log.debug("Order ID: {} is now IN_PROGRESS. Triggering preparation actions.", order.getId());
+            // Tạo Shipment record (nếu chưa có)
+            // createInitialShipment(order);
+            // Gửi thông báo xác nhận/bắt đầu chuẩn bị cho user
+            // sendProcessingNotification(order);
+        }
+        // Thêm các xử lý cho trạng thái khác (OUT_FOR_DELIVERY, ...)
+    }
 
     // Hàm helper để xóa giỏ hàng một cách an toàn
     private void clearCartItemsAfterOrder(Cart cart, Long userId, Long orderId) {

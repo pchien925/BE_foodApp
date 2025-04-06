@@ -5,6 +5,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 import vn.edu.hcmute.foodapp.entity.Order;
 import vn.edu.hcmute.foodapp.util.enumeration.EOrderStatus;
@@ -31,4 +32,22 @@ public interface OrderRepository extends JpaRepository<Order, Long> {
             "LEFT JOIN FETCH oi.options op " +
             "WHERE o.id = :orderId")
     Optional<Order> findOrderWithDetailsById(Long orderId);
+
+    @Query(value = "SELECT o FROM Order o LEFT JOIN o.user u LEFT JOIN o.branch b WHERE " +
+            "(:statusFilter IS NULL OR o.orderStatus = :statusFilter) AND " +
+            "(:userIdFilter IS NULL OR u.id = :userIdFilter) AND " +
+            "(:branchIdFilter IS NULL OR b.id = :branchIdFilter) AND " +
+            "(:orderCodeFilter IS NULL OR LOWER(o.orderCode) LIKE LOWER(CONCAT('%', :orderCodeFilter, '%')))",
+            countQuery = "SELECT COUNT(o) FROM Order o LEFT JOIN o.user u LEFT JOIN o.branch b WHERE " +
+                    "(:statusFilter IS NULL OR o.orderStatus = :statusFilter) AND " +
+                    "(:userIdFilter IS NULL OR u.id = :userIdFilter) AND " +
+                    "(:branchIdFilter IS NULL OR b.id = :branchIdFilter) AND " +
+                    "(:orderCodeFilter IS NULL OR LOWER(o.orderCode) LIKE LOWER(CONCAT('%', :orderCodeFilter, '%')))")
+    Page<Order> findOrdersAdminWithFilters(
+            @Param("statusFilter") EOrderStatus statusFilter,
+            @Param("userIdFilter") Long userIdFilter,
+            @Param("branchIdFilter") Integer branchIdFilter,
+            @Param("orderCodeFilter") String orderCodeFilter,
+            Pageable pageable
+    );
 }
