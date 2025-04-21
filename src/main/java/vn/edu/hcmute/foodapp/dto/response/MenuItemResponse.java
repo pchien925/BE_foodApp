@@ -15,5 +15,4 @@ public class MenuItemResponse {
     private String description;
     private String imageUrl;
     private BigDecimal basePrice;
-    private Boolean isAvailable;
 }

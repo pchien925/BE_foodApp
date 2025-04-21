@@ -11,6 +11,8 @@ import java.time.LocalDateTime;
 @Setter
 @Builder
 public class ShipmentTrackingEventResponse {
+    private Long id;
+
     private EDeliveryStatus deliveryStatus;
 
     private String note;

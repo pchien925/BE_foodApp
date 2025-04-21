@@ -11,8 +11,8 @@ import java.util.Set;
 @Setter
 @Builder
 public class OrderItemResponse {
+    private Long id;
     private MenuItemResponse menuItem;
-    private String imageUrl;
     private Integer quantity;
     private BigDecimal pricePerUnit;
     private BigDecimal totalPrice;

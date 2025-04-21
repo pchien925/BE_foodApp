@@ -22,4 +22,5 @@ public class OrderSummaryResponse {
     private LocalDateTime createdAt;
     private String branchName;
     private UserInfoResponse userInfo;
+    private LocalDateTime updatedAt;
 }

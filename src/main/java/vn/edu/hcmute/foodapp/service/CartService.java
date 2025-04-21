@@ -6,13 +6,13 @@ import vn.edu.hcmute.foodapp.dto.request.UpdateCartItemQuantityRequest;
 import vn.edu.hcmute.foodapp.dto.response.CartResponse;
 
 public interface CartService {
-    CartResponse getCart(Long userId, String sessionId);
+    CartResponse getCart(String sessionId);
 
-    CartResponse addItemToCart(Long userId, String sessionID, AddCartItemRequest request);
+    CartResponse addItemToCart(String sessionID, AddCartItemRequest request);
 
-    CartResponse updateItemQuantity(Long userId, String sessionId, Long cartItemId, UpdateCartItemQuantityRequest request);
+    CartResponse updateItemQuantity(String sessionId, Long cartItemId, UpdateCartItemQuantityRequest request);
 
-    CartResponse removeItemFromCart(Long userId, String sessionId, Long cartItemId);
+    CartResponse removeItemFromCart(String sessionId, Long cartItemId);
 
-    CartResponse clearCart(Long userId, String sessionId);
+    CartResponse clearCart(String sessionId);
 }

@@ -12,7 +12,7 @@ import vn.edu.hcmute.foodapp.dto.request.UpdateOrderStatusRequest;
 import vn.edu.hcmute.foodapp.dto.response.*;
 import vn.edu.hcmute.foodapp.entity.*;
 import vn.edu.hcmute.foodapp.exception.InvalidActionException;
-import vn.edu.hcmute.foodapp.exception.InvalidDataException; // Nên dùng
+import vn.edu.hcmute.foodapp.exception.InvalidDataException;
 import vn.edu.hcmute.foodapp.exception.OrderCreationFailedException;
 import vn.edu.hcmute.foodapp.exception.ResourceNotFoundException;
 import vn.edu.hcmute.foodapp.mapper.OrderMapper;
@@ -244,7 +244,6 @@ public class OrderServiceImpl implements OrderService {
 
         Pageable pageable = PaginationUtil.createPageable(page, size, sort, direction);
 
-        // Gọi trực tiếp phương thức repository với các tham số filter
         Page<Order> orderPage = orderRepository.findOrdersAdminWithFilters(
                 statusFilter,
                 userIdFilter,
@@ -255,8 +254,8 @@ public class OrderServiceImpl implements OrderService {
         );
 
         return PageResponse.<OrderSummaryResponse>builder()
-                .currentPage(page) // hoặc orderPage.getNumber() + 1 nếu page của bạn là 1-based
-                .pageSize(size)    // hoặc orderPage.getSize()
+                .currentPage(page) //
+                .pageSize(size)    //
                 .totalPages(orderPage.getTotalPages())
                 .totalElements(orderPage.getTotalElements())
                 .content(orderPage.getContent().stream()
@@ -275,7 +274,6 @@ public class OrderServiceImpl implements OrderService {
         EOrderStatus oldStatus = order.getOrderStatus();
         EOrderStatus newStatus = request.getStatus();
 
-        // Validate luồng chuyển trạng thái (ví dụ đơn giản)
         if (!isValidStatusTransition(oldStatus, newStatus)) {
             log.warn("Invalid status transition attempt for order ID: {} from {} to {}", orderId, oldStatus, newStatus);
             throw new InvalidActionException("Cannot change order status from " + oldStatus + " to " + newStatus);
@@ -305,13 +303,11 @@ public class OrderServiceImpl implements OrderService {
     }
 
     private boolean isValidStatusTransition(EOrderStatus oldStatus, EOrderStatus newStatus) {
-        if (oldStatus == newStatus) return true; // Cho phép cập nhật cùng trạng thái (nếu cần)
+        if (oldStatus == newStatus) return true;
 
-        // Chỉ cho phép chuyển từ PENDING sang các trạng thái khác (trừ COMPLETED trực tiếp?)
         if (oldStatus == EOrderStatus.PENDING) {
             return newStatus == EOrderStatus.IN_PROGRESS || newStatus == EOrderStatus.CANCELLED;
         }
-        // Từ IN_PROGRESS có thể sang COMPLETED, CANCELLED (hoặc các trạng thái giao hàng)
         if (oldStatus == EOrderStatus.IN_PROGRESS) {
             // Tùy vào luồng nghiệp vụ của bạn, ví dụ có qua các bước giao hàng không
             return newStatus == EOrderStatus.COMPLETED || newStatus == EOrderStatus.CANCELLED /* || newStatus == EOrderStatus.OUT_FOR_DELIVERY */;
@@ -320,8 +316,7 @@ public class OrderServiceImpl implements OrderService {
         if (oldStatus == EOrderStatus.COMPLETED || oldStatus == EOrderStatus.CANCELLED) {
             return false;
         }
-        // Thêm các luật khác nếu cần (ví dụ: liên quan đến trạng thái giao hàng)
-        return true; // Mặc định cho phép nếu không rơi vào các trường hợp cấm
+        return true;
     }
 
     private void triggerActionsForStatus(Order order, EOrderStatus oldStatus, EOrderStatus newStatus, String reason) {
@@ -397,7 +392,7 @@ public class OrderServiceImpl implements OrderService {
     private String generateOrderCode() {
         long timestamp = Instant.now().toEpochMilli();
         int randomNum = (int) (Math.random() * 10000);
-        String code = String.valueOf(timestamp) + String.format("%04d", randomNum);
+        String code = timestamp + String.format("%04d", randomNum);
         String numericPart = code.substring(Math.max(0, code.length() - 10));
         return "ORDER-" + numericPart;
     }

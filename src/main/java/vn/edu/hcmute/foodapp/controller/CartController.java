@@ -26,11 +26,10 @@ public class CartController {
     public ResponseData<CartResponse> getCartDetails(@RequestParam(required = false) Long userId,
                                                      @RequestParam(required = false) String sessionId) {
         log.info("Fetching cart details");
-        CartResponse response = cartService.getCart(userId, sessionId);
         return ResponseData.<CartResponse>builder()
                 .status(HttpStatus.OK.value())
                 .message("Cart details retrieved successfully")
-                .data(response)
+                .data(cartService.getCart(sessionId))
                 .build();
     }
 
@@ -43,7 +42,7 @@ public class CartController {
         return ResponseData.<CartResponse>builder()
                 .status(HttpStatus.OK.value())
                 .message("Item added to cart successfully")
-                .data(cartService.addItemToCart(userId, sessionId, request))
+                .data(cartService.addItemToCart( sessionId, request))
                 .build();
     }
 
@@ -57,7 +56,7 @@ public class CartController {
         return ResponseData.<CartResponse>builder()
                 .status(HttpStatus.OK.value())
                 .message("Item quantity updated successfully")
-                .data(cartService.updateItemQuantity(userId, sessionId, cartItemId, request))
+                .data(cartService.updateItemQuantity(sessionId, cartItemId, request))
                 .build();
     }
 
@@ -70,7 +69,7 @@ public class CartController {
         return ResponseData.<CartResponse>builder()
                 .status(HttpStatus.OK.value())
                 .message("Item removed from cart successfully")
-                .data(cartService.removeItemFromCart(userId, sessionId, cartItemId))
+                .data(cartService.removeItemFromCart(sessionId, cartItemId))
                 .build();
     }
 
@@ -82,7 +81,7 @@ public class CartController {
         return ResponseData.<CartResponse>builder()
                 .status(HttpStatus.OK.value())
                 .message("Cart cleared successfully")
-                .data(cartService.clearCart(userId, sessionId))
+                .data(cartService.clearCart( sessionId))
                 .build();
     }
 }

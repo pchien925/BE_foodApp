@@ -20,7 +20,7 @@ public class BranchDetailsResponse {
 
     private boolean isActive;
 
-    private String operatingHours;
+        private String operatingHours;
 
     private LocalDateTime createdAt;
 

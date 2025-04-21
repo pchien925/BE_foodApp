@@ -37,8 +37,6 @@ public class OrderDetailsResponse {
 
     private Set<PaymentInfoResponse> paymentInfos;
 
-    private Set<ShipmentInfoResponse> shipmentInfo;
-
     private Integer pointsEarnedOrSpent;
 
     private String loyaltyTransactionDescription;

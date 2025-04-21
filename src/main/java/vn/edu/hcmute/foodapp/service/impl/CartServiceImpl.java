@@ -4,6 +4,7 @@ import io.jsonwebtoken.Jwts;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.autoconfigure.security.oauth2.resource.OAuth2ResourceServerProperties;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContext;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -17,6 +18,7 @@ import vn.edu.hcmute.foodapp.exception.ResourceNotFoundException;
 import vn.edu.hcmute.foodapp.mapper.CartMapper;
 import vn.edu.hcmute.foodapp.repository.*;
 import vn.edu.hcmute.foodapp.service.CartService;
+import vn.edu.hcmute.foodapp.util.SecurityUtil;
 
 import java.math.BigDecimal;
 import java.util.*;
@@ -35,13 +37,9 @@ public class CartServiceImpl implements CartService {
 
     @Override
     @Transactional
-    public CartResponse getCart(Long userId, String sessionId){
+    public CartResponse getCart(String sessionId){
+        Long userId = SecurityUtil.getCurrentUser().getId();
         log.info("Fetching cart for userId: {} and sessionId: {}", userId, sessionId);
-
-//        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-//        User user = (User) authentication.getPrincipal();
-//        log.info("user id : {}", user.getId());
-
         Cart cart = findOrCreateCart(userId, sessionId);
         if (cart.getCartItems() == null) {
             cart.setCartItems(new HashSet<>());
@@ -51,7 +49,8 @@ public class CartServiceImpl implements CartService {
 
     @Override
     @Transactional
-    public CartResponse addItemToCart(Long userId, String sessionId, AddCartItemRequest request) {
+    public CartResponse addItemToCart(String sessionId, AddCartItemRequest request) {
+        Long userId = SecurityUtil.getCurrentUser().getId();
         log.info("Adding item to cart for userId: {} and sessionId: {}", userId, sessionId);
         Cart cart = findOrCreateCart(userId, sessionId);
 
@@ -95,10 +94,11 @@ public class CartServiceImpl implements CartService {
 
     @Override
     @Transactional
-    public CartResponse updateItemQuantity(Long userId, String sessionId, Long cartItemId, UpdateCartItemQuantityRequest request) {
+    public CartResponse updateItemQuantity(String sessionId, Long cartItemId, UpdateCartItemQuantityRequest request) {
+        Long userId = SecurityUtil.getCurrentUser().getId();
         log.info("Updating item quantity in cart for userId: {} and sessionId: {}", userId, sessionId);
         if (request.getQuantity() <= 0) {
-            return removeItemFromCart(userId, sessionId, cartItemId);
+            return removeItemFromCart(sessionId, cartItemId);
         }
         Cart cart = findCartByUserIdOrSessionId(userId, sessionId)
                 .orElseThrow(() -> new ResourceNotFoundException("Cart not found"));
@@ -114,7 +114,8 @@ public class CartServiceImpl implements CartService {
 
     @Override
     @Transactional
-    public CartResponse removeItemFromCart(Long userId, String sessionId, Long cartItemId) {
+    public CartResponse removeItemFromCart(String sessionId, Long cartItemId) {
+        Long userId = SecurityUtil.getCurrentUser().getId();
         log.info("Removing item from cart for userId: {} and sessionId: {}", userId, sessionId);
         Cart cart = findCartByUserIdOrSessionId(userId, sessionId)
                 .orElseThrow(() -> new ResourceNotFoundException("Cart not found"));
@@ -129,7 +130,8 @@ public class CartServiceImpl implements CartService {
 
     @Transactional
     @Override
-    public CartResponse clearCart(Long userId, String sessionId) {
+    public CartResponse clearCart(String sessionId) {
+        Long userId = SecurityUtil.getCurrentUser().getId();
         log.info("Clearing cart for userId: {} and sessionId: {}", userId, sessionId);
         Cart cart = findCartByUserIdOrSessionId(userId, sessionId)
                 .orElseThrow(() -> new ResourceNotFoundException("Cart not found"));
