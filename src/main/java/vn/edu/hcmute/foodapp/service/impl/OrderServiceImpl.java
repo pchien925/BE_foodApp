@@ -281,8 +281,8 @@ public class OrderServiceImpl implements OrderService {
         addLoyaltyPointsForOrder(order);
 
         NotificationRequest notification = new NotificationRequest();
-        notification.setTitle("Order Completion");
-        notification.setContent("Your order with order code: " + order.getOrderCode() + " has been completed.");
+        notification.setTitle("Đơn hàng đã hoàn tất");
+        notification.setContent("Đơn hàng của bạn với mã đơn hàng: " + order.getOrderCode() + " đã được hoàn tất.");
 
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new ResourceNotFoundException("User not found with ID: " + userId));
@@ -410,8 +410,8 @@ public class OrderServiceImpl implements OrderService {
 
         // Gửi thông báo hoàn thành đơn hàng (luôn gửi, kể cả khi không có điểm)
         NotificationRequest notification = new NotificationRequest();
-        notification.setTitle("Order Completed");
-        StringBuilder content = new StringBuilder("Your order with order code: " + order.getOrderCode() + " has been completed.");
+        notification.setTitle("Đơn hàng đã hoàn tất");
+        StringBuilder content = new StringBuilder("Đơn hàng của bạn với mã đơn hàng: " + order.getOrderCode() + " đã được hoàn tất. ");
 
         if (pointsEarned <= 0) {
             log.debug("Order ID: {} total price {} is too low to earn points.", order.getId(), totalPrice);
@@ -449,7 +449,7 @@ public class OrderServiceImpl implements OrderService {
         log.debug("Updated loyalty points balance for User ID: {}. New balance: {}", user.getId(), newBalance);
 
         // Thêm thông tin điểm thưởng vào nội dung thông báo
-        content.append(" You have earned ").append(pointsEarned).append(" loyalty points.");
+        content.append("Bạn nhận được ").append(pointsEarned).append(" điểm thưởng từ đơn hàng này. ");
         notification.setContent(content.toString());
         notificationService.sendAndSaveNotification(notification, user.getEmail());
         log.debug("Sent notification for order completion with loyalty points for Order ID: {}", order.getId());
