@@ -16,6 +16,7 @@ public interface BranchMapper {
 
     Branch toEntity(BranchRequest branchRequest);
 
+    @Mapping(target = "isActive", source = "active")
     BranchDetailsResponse toResponse(Branch branch);
 
     BranchInfoResponse toInfoResponse(Branch branch);

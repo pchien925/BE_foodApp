@@ -4,6 +4,8 @@ import vn.edu.hcmute.foodapp.dto.request.BranchRequest;
 import vn.edu.hcmute.foodapp.dto.response.BranchDetailsResponse;
 import vn.edu.hcmute.foodapp.dto.response.PageResponse;
 
+import java.util.List;
+
 public interface BranchService {
     BranchDetailsResponse createBranch(BranchRequest request);
 
@@ -16,4 +18,6 @@ public interface BranchService {
     PageResponse<BranchDetailsResponse> getBranches(int page, int size, String sort, String direction);
 
     PageResponse<BranchDetailsResponse> searchBranches(String keyword, int page, int size, String sort, String direction);
+
+    List<BranchDetailsResponse> getAllBranches();
 }

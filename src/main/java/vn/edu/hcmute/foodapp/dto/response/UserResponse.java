@@ -21,6 +21,4 @@ public class UserResponse {
     private String address;
     private String status;
     private Integer loyaltyPointsBalance;
-
-    private List<String> roles;
 }

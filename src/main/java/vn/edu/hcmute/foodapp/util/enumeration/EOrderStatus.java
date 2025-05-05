@@ -1,8 +1,8 @@
 package vn.edu.hcmute.foodapp.util.enumeration;
 
 public enum EOrderStatus {
-    PENDING,
-    IN_PROGRESS,
+    PROCESSING,
+    SHIPPING,
     COMPLETED,
     CANCELLED
 }

@@ -16,6 +16,10 @@ spring:
     properties:
       hibernate:
         format_sql: true
+  servlet:
+    multipart:
+      max-file-size: "10MB"
+      max-request-size: "10MB"
   data:
     redis:
       port: ${SPRING_DATA_REDIS_PORT:6379}
@@ -49,7 +53,7 @@ openapi:
 jwt:
   accessToken:
     secretKey: ${JWT_ACCESS_TOKEN_SECRET_KEY:bNg5ITJ8MjZGOlrQPLTOikaJI1WZqnhwrI3eypbGjyQ=}
-    expiry: 3600000  # 1h
+    expiry: 43200000  # 12h
   refreshToken:
     secretKey: ${JWT_REFRESH_TOKEN_SECRET_KEY:9k1jJAWAKQCnCEz1pwcPNegbHoLugf9hgEnn6sz5pFc=}
     expiry: 1209600000  # 14d
@@ -64,3 +68,6 @@ cloudinary:
   cloud_name: ${CLOUDINARY_CLOUD_NAME}
   api_key: ${CLOUDINARY_API_KEY}
   api_secret: ${CLOUDINARY_API_SECRET}
+
+loyalty:
+  point-rate: 50000

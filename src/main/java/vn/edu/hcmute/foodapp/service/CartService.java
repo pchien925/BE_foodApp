@@ -3,7 +3,10 @@ package vn.edu.hcmute.foodapp.service;
 import org.springframework.transaction.annotation.Transactional;
 import vn.edu.hcmute.foodapp.dto.request.AddCartItemRequest;
 import vn.edu.hcmute.foodapp.dto.request.UpdateCartItemQuantityRequest;
+import vn.edu.hcmute.foodapp.dto.response.CartItemResponse;
 import vn.edu.hcmute.foodapp.dto.response.CartResponse;
+
+import java.util.List;
 
 public interface CartService {
     CartResponse getCart(String sessionId);
@@ -15,4 +18,6 @@ public interface CartService {
     CartResponse removeItemFromCart(String sessionId, Long cartItemId);
 
     CartResponse clearCart(String sessionId);
+
+    List<CartItemResponse> getCartItems(String sessionId);
 }

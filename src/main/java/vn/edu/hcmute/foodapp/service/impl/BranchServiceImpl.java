@@ -15,6 +15,9 @@ import vn.edu.hcmute.foodapp.repository.BranchRepository;
 import vn.edu.hcmute.foodapp.service.BranchService;
 import vn.edu.hcmute.foodapp.util.PaginationUtil;
 
+import java.util.List;
+import java.util.stream.Collectors;
+
 @Service
 @RequiredArgsConstructor
 @Slf4j
@@ -81,5 +84,10 @@ public class BranchServiceImpl implements BranchService {
                 .totalElements(branchPage.getTotalElements())
                 .content(branchPage.getContent().stream().map(BranchMapper.INSTANCE::toResponse).toList())
                 .build();
+    }
+
+    @Override
+    public List<BranchDetailsResponse> getAllBranches() {
+        return branchRepository.findAll().stream().map(BranchMapper.INSTANCE::toResponse).toList();
     }
 }

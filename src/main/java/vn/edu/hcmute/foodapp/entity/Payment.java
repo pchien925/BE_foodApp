@@ -16,19 +16,18 @@ import java.time.LocalDateTime;
 @NoArgsConstructor
 @AllArgsConstructor
 public class Payment extends AbstractEntity<Long> {
-
-    @Column(name = "payment_method")
+    @Column(name = "payment_method", nullable = false)
     @Enumerated(EnumType.STRING)
     private EPaymentMethod paymentMethod;
 
-    @ManyToOne
-    @JoinColumn(name = "order_id", referencedColumnName = "id")
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "order_id", referencedColumnName = "id", nullable = false)
     private Order order;
 
-    @Column(name = "amount", precision = 10, scale = 2)
+    @Column(name = "amount", precision = 10, scale = 2, nullable = false)
     private BigDecimal amount;
 
-    @Column(name = "status")
+    @Column(name = "status", nullable = false)
     @Enumerated(EnumType.STRING)
     private EPaymentStatus status;
 

@@ -9,9 +9,12 @@ import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 import vn.edu.hcmute.foodapp.dto.request.AddCartItemRequest;
 import vn.edu.hcmute.foodapp.dto.request.UpdateCartItemQuantityRequest;
+import vn.edu.hcmute.foodapp.dto.response.CartItemResponse;
 import vn.edu.hcmute.foodapp.dto.response.CartResponse;
 import vn.edu.hcmute.foodapp.dto.response.ResponseData;
 import vn.edu.hcmute.foodapp.service.CartService;
+
+import java.util.List;
 
 @RestController
 @RequestMapping("/api/v1/carts")
@@ -23,8 +26,7 @@ public class CartController {
 
     @GetMapping
     @Operation(summary = "Get cart details", description = "Retrieve the details of the user's cart.")
-    public ResponseData<CartResponse> getCartDetails(@RequestParam(required = false) Long userId,
-                                                     @RequestParam(required = false) String sessionId) {
+    public ResponseData<CartResponse> getCartDetails(@RequestParam(required = false) String sessionId) {
         log.info("Fetching cart details");
         return ResponseData.<CartResponse>builder()
                 .status(HttpStatus.OK.value())
@@ -48,7 +50,7 @@ public class CartController {
 
     @PatchMapping("/items/{cartItemId}")
     @Operation(summary = "Update item quantity", description = "Update the quantity of an item in the user's cart.")
-    public ResponseData<CartResponse> updateItemQuantity(@RequestParam(required = false) Long userId,
+    public ResponseData<CartResponse> updateItemQuantity(
                                                           @RequestParam(required = false) String sessionId,
                                                           @PathVariable Long cartItemId,
                                                           @RequestBody UpdateCartItemQuantityRequest request) {
@@ -75,13 +77,25 @@ public class CartController {
 
     @DeleteMapping
     @Operation(summary = "Clear cart", description = "Clear all items from the user's cart.")
-    public ResponseData<CartResponse> clearCart(@RequestParam(required = false) Long userId,
+    public ResponseData<CartResponse> clearCart(
                                                 @RequestParam(required = false) String sessionId) {
         log.info("Clearing cart");
         return ResponseData.<CartResponse>builder()
                 .status(HttpStatus.OK.value())
                 .message("Cart cleared successfully")
                 .data(cartService.clearCart( sessionId))
+                .build();
+    }
+
+    @GetMapping("/items")
+    @Operation(summary = "Get cart items", description = "Retrieve all items in the user's cart.")
+    public ResponseData<List<CartItemResponse>> getCartItems(
+            @RequestParam(required = false) String sessionId) {
+        log.info("Fetching cart items");
+        return ResponseData.<List<CartItemResponse>>builder()
+                .status(HttpStatus.OK.value())
+                .message("Cart items retrieved successfully")
+                .data(cartService.getCartItems(sessionId))
                 .build();
     }
 }

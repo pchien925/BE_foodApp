@@ -15,6 +15,8 @@ import vn.edu.hcmute.foodapp.dto.response.PageResponse;
 import vn.edu.hcmute.foodapp.dto.response.ResponseData;
 import vn.edu.hcmute.foodapp.service.MenuCategoryService;
 
+import java.util.List;
+
 @RestController
 @RequestMapping("/api/v1/menu-categories")
 @RequiredArgsConstructor
@@ -82,6 +84,17 @@ public class MenuCategoryController {
                 .status(HttpStatus.OK.value())
                 .message("Menu categories retrieved successfully")
                 .data(menuCategoryService.getMenuCategories(page, size, sort, direction))
+                .build();
+    }
+
+    @GetMapping("/all")
+    @Operation(summary = "Get all menu categories without pagination", description = "Get all menu categories without pagination")
+    public ResponseData<List<MenuCategoryResponse>> getAllMenuCategoriesWithoutPagination() {
+        log.info("Get all menu categories without pagination request");
+        return ResponseData.<List<MenuCategoryResponse>>builder()
+                .status(HttpStatus.OK.value())
+                .message("Menu categories retrieved successfully")
+                .data(menuCategoryService.getAllMenuCategories())
                 .build();
     }
 

@@ -38,7 +38,7 @@ public class OrderController {
     }
 
     @GetMapping
-    public ResponseData<PageResponse<OrderSummaryResponse>> getUserOrders(
+    public ResponseData<PageResponse<OrderInfoResponse>> getUserOrders(
             @RequestParam Long userId,
             @RequestParam(defaultValue = "1") int page,
             @RequestParam(defaultValue = "10") int size,
@@ -46,8 +46,8 @@ public class OrderController {
             @RequestParam(defaultValue = "desc") String direction,
             @RequestParam(required = false) EOrderStatus statusFilter) {
         log.info("Get orders for user with id: {}", userId);
-        PageResponse<OrderSummaryResponse> orderSummaryResponsePage = orderService.getUserOrders(userId, page, size, sort, direction, statusFilter);
-        return ResponseData.<PageResponse<OrderSummaryResponse>>builder()
+        PageResponse<OrderInfoResponse> orderSummaryResponsePage = orderService.getUserOrders(userId, page, size, sort, direction, statusFilter);
+        return ResponseData.<PageResponse<OrderInfoResponse>>builder()
                 .data(orderSummaryResponsePage)
                 .message("Orders retrieved successfully")
                 .build();

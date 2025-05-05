@@ -25,7 +25,7 @@ public interface OrderRepository extends JpaRepository<Order, Long> {
             "LEFT JOIN FETCH o.user u " +
             "LEFT JOIN FETCH o.branch b " +
             "LEFT JOIN FETCH o.orderItems oi " +
-            "LEFT JOIN FETCH o.shipments s " +
+            "LEFT JOIN FETCH o.shipment s " +
             "LEFT JOIN FETCH o.payments p " +
             "LEFT JOIN FETCH o.loyaltyTransaction lt " +
             "LEFT JOIN FETCH oi.menuItem mi " +

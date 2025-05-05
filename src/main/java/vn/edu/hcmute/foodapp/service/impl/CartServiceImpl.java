@@ -1,20 +1,16 @@
 package vn.edu.hcmute.foodapp.service.impl;
 
-import io.jsonwebtoken.Jwts;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.boot.autoconfigure.security.oauth2.resource.OAuth2ResourceServerProperties;
-import org.springframework.security.access.AccessDeniedException;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContext;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import vn.edu.hcmute.foodapp.dto.request.AddCartItemRequest;
 import vn.edu.hcmute.foodapp.dto.request.UpdateCartItemQuantityRequest;
+import vn.edu.hcmute.foodapp.dto.response.CartItemResponse;
 import vn.edu.hcmute.foodapp.dto.response.CartResponse;
 import vn.edu.hcmute.foodapp.entity.*;
 import vn.edu.hcmute.foodapp.exception.ResourceNotFoundException;
+import vn.edu.hcmute.foodapp.mapper.CartItemMapper;
 import vn.edu.hcmute.foodapp.mapper.CartMapper;
 import vn.edu.hcmute.foodapp.repository.*;
 import vn.edu.hcmute.foodapp.service.CartService;
@@ -140,17 +136,26 @@ public class CartServiceImpl implements CartService {
         return buildCartResponse(cart);
     }
 
+    @Transactional(readOnly = true)
+    @Override
+    public List<CartItemResponse> getCartItems(String sessionId) {
+        Long userId = SecurityUtil.getCurrentUser().getId();
+        log.info("Fetching cart items for userId: {} and sessionId: {}", userId, sessionId);
+        Cart cart = findCartByUserIdOrSessionId(userId, sessionId)
+                .orElseThrow(() -> new ResourceNotFoundException("Cart not found"));
+        return cart.getCartItems().stream()
+                .map(CartItemMapper.INSTANCE::toResponse)
+                .collect(Collectors.toList());
+    }
 
-    private Cart findOrCreateCart(Long userId, String sessionId){
+
+    private Cart findOrCreateCart(Long userId, String sessionId) {
         log.info("Finding or creating cart for userId: {} and sessionId: {}", userId, sessionId);
         if (userId == null && sessionId == null) {
             throw new IllegalArgumentException("Either userId or sessionId must be provided");
         }
-        if (!cartRepository.existsByUser_IdOrSessionId(userId, sessionId)) {
-            return createNewCart(userId, sessionId);
-        }
         return findCartByUserIdOrSessionId(userId, sessionId)
-                .orElseThrow(() -> new ResourceNotFoundException("Cart not found"));
+                .orElseGet(() -> createNewCart(userId, sessionId));
     }
 
     private Cart createNewCart(Long userId, String sessionId) {

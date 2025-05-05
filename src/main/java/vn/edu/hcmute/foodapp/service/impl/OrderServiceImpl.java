@@ -2,12 +2,14 @@ package vn.edu.hcmute.foodapp.service.impl;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import vn.edu.hcmute.foodapp.dto.request.CreateOrderRequest;
+import vn.edu.hcmute.foodapp.dto.request.NotificationRequest;
 import vn.edu.hcmute.foodapp.dto.request.UpdateOrderStatusRequest;
 import vn.edu.hcmute.foodapp.dto.response.*;
 import vn.edu.hcmute.foodapp.entity.*;
@@ -17,8 +19,10 @@ import vn.edu.hcmute.foodapp.exception.OrderCreationFailedException;
 import vn.edu.hcmute.foodapp.exception.ResourceNotFoundException;
 import vn.edu.hcmute.foodapp.mapper.OrderMapper;
 import vn.edu.hcmute.foodapp.repository.*;
+import vn.edu.hcmute.foodapp.service.NotificationService;
 import vn.edu.hcmute.foodapp.service.OrderService;
 import vn.edu.hcmute.foodapp.util.PaginationUtil;
+import vn.edu.hcmute.foodapp.util.enumeration.ELoyaltyTransactionType;
 import vn.edu.hcmute.foodapp.util.enumeration.EOrderStatus;
 
 import java.math.BigDecimal;
@@ -42,6 +46,11 @@ public class OrderServiceImpl implements OrderService {
     private final MenuItemOptionRepository menuItemOptionRepository;
     private final CartItemOptionRepository cartItemOptionRepository;
     private final CartItemRepository cartItemRepository;
+    private final NotificationService notificationService;
+    private final LoyaltyPointTransactionRepository loyaltyPointTransactionRepository;
+
+    @Value("${loyalty.point-rate}")
+    private BigDecimal POINT_RATE;
 
     @Override
     @Transactional
@@ -58,7 +67,6 @@ public class OrderServiceImpl implements OrderService {
                 .orElseThrow(() -> new ResourceNotFoundException("Cart not found for user: " + userId));
 
         Set<CartItem> cartItems = cart.getCartItems();
-        // Sửa: Dùng InvalidDataException cho ngữ nghĩa tốt hơn
         if (cartItems == null || cartItems.isEmpty()) {
             throw new InvalidDataException("Cannot create order from an empty cart.");
         }
@@ -69,7 +77,7 @@ public class OrderServiceImpl implements OrderService {
         order.setUser(user);
         order.setBranch(branch);
         order.setOrderCode(generateOrderCode());
-        order.setOrderStatus(EOrderStatus.PENDING);
+        order.setOrderStatus(EOrderStatus.PROCESSING);
         order.setTotalPrice(BigDecimal.ZERO);
 
         order = orderRepository.save(order);
@@ -93,7 +101,6 @@ public class OrderServiceImpl implements OrderService {
                 throw new IllegalStateException("Cart item data is inconsistent. Missing price information for item " + menuItem.getName());
             }
 
-
             // Tạo OrderItem ban đầu
             OrderItem orderItem = OrderItem.builder()
                     .menuItem(menuItem)
@@ -104,9 +111,9 @@ public class OrderServiceImpl implements OrderService {
 
             // Tính giá cơ bản của item (chưa có option)
             BigDecimal orderItemBaseTotal = itemBasePrice.multiply(BigDecimal.valueOf(cartItem.getQuantity()));
-            orderItem.setTotalPrice(orderItemBaseTotal); // Set giá ban đầu
+            orderItem.setTotalPrice(orderItemBaseTotal);
 
-            // Lưu OrderItem trước khi xử lý option (để có ID)
+            // Lưu OrderItem trước khi xử lý option
             orderItem = orderItemRepository.save(orderItem);
             log.debug("Saved OrderItem ID: {} for MenuItem ID: {}. Base total: {}", orderItem.getId(), menuItem.getId(), orderItemBaseTotal);
 
@@ -114,11 +121,9 @@ public class OrderServiceImpl implements OrderService {
             BigDecimal itemOptionsTotal = BigDecimal.ZERO;
             Set<CartItemOption> cartItemOptions = cartItem.getCartItemOptions();
 
-            // Chỉ xử lý nếu có option
             if (cartItemOptions != null && !cartItemOptions.isEmpty()) {
                 log.debug("Processing {} options for CartItem ID: {}", cartItemOptions.size(), cartItem.getId());
                 for (CartItemOption cartItemOption : cartItemOptions) {
-                    // Lấy MenuItemOption tương ứng
                     MenuItemOption menuItemOption = menuItemOptionRepository.findById(cartItemOption.getMenuItemOption().getId())
                             .orElseThrow(() -> new ResourceNotFoundException("Menu item option referenced in cart not found (ID: " + cartItemOption.getMenuItemOption().getId() + ")"));
 
@@ -131,7 +136,6 @@ public class OrderServiceImpl implements OrderService {
                                 menuItemOption.getValue());
                     }
 
-                    // Tạo OrderItemOption
                     OrderItemOption orderItemOption = OrderItemOption.builder()
                             .orderItem(orderItem)
                             .optionName(menuItemOption.getOption().getName())
@@ -143,7 +147,6 @@ public class OrderServiceImpl implements OrderService {
 
                     itemOptionsTotal = itemOptionsTotal.add(effectiveOptionPrice);
                 }
-
 
                 orderItem.setTotalPrice(orderItemBaseTotal.add(itemOptionsTotal));
                 orderItem = orderItemRepository.save(orderItem);
@@ -164,25 +167,23 @@ public class OrderServiceImpl implements OrderService {
         return response;
     }
 
-
     @Transactional(readOnly = true)
     @Override
-    public PageResponse<OrderSummaryResponse> getUserOrders(Long userId, int page, int size, String sort, String direction, EOrderStatus statusFilter){
+    public PageResponse<OrderInfoResponse> getUserOrders(Long userId, int page, int size, String sort, String direction, EOrderStatus statusFilter){
         log.info("Retrieving orders for user ID: {} with status filter: {}", userId, statusFilter);
         Pageable pageable = PaginationUtil.createPageable(page, size, sort, direction);
 
         Page<Order> orderPage = orderRepository.findByUser_IdAndOrderStatus(userId, statusFilter, pageable);
 
-        return PageResponse.<OrderSummaryResponse>builder()
+        return PageResponse.<OrderInfoResponse>builder()
                 .currentPage(page)
                 .pageSize(size)
                 .totalPages(orderPage.getTotalPages())
                 .totalElements(orderPage.getTotalElements())
                 .content(orderPage.getContent().stream()
-                        .map(OrderMapper.INSTANCE::toSummaryResponse)
+                        .map(OrderMapper.INSTANCE::toInfoResponse)
                         .toList())
                 .build();
-
     }
 
     @Transactional(readOnly = true)
@@ -192,7 +193,6 @@ public class OrderServiceImpl implements OrderService {
         Order order = orderRepository.findOrderWithDetailsById(orderId)
                 .orElseThrow(() -> new ResourceNotFoundException("Order not found with ID: " + orderId));
 
-        // Kiểm tra quyền truy cập của user
         if (!order.getUser().getId().equals(userId)) {
             log.warn("Access denied for user ID: {} trying to access order ID: {}", userId, orderId);
             throw new AccessDeniedException("You do not have permission to view this order.");
@@ -209,36 +209,96 @@ public class OrderServiceImpl implements OrderService {
         Order order = orderRepository.findById(orderId)
                 .orElseThrow(() -> new ResourceNotFoundException("Order not found with ID: " + orderId));
 
-        // Xác thực chủ sở hữu
         if (!order.getUser().getId().equals(userId)) {
             log.warn("Access denied for user ID: {} trying to cancel order ID: {}", userId, orderId);
             throw new AccessDeniedException("You do not have permission to cancel this order.");
         }
 
-        // Kiểm tra trạng thái cho phép hủy (ví dụ: chỉ PENDING)
-        if (order.getOrderStatus() != EOrderStatus.PENDING) {
+        if (order.getOrderStatus() != EOrderStatus.PROCESSING) {
             log.warn("Order ID: {} cannot be cancelled because its status is {}", orderId, order.getOrderStatus());
             throw new InvalidActionException("Order cannot be cancelled in its current state: " + order.getOrderStatus());
         }
 
         order.setOrderStatus(EOrderStatus.CANCELLED);
-        // Thêm logic khác nếu cần:
-        // - Hoàn điểm loyalty nếu đã sử dụng điểm cho đơn này
-        // - Hủy các giao dịch thanh toán liên quan (nếu đã tạo và chưa xử lý)
-        // - Thông báo cho chi nhánh/hệ thống
-        // Ví dụ: handleLoyaltyPointReversal(order);
-        // Ví dụ: cancelPendingPayments(order);
+
+        NotificationRequest notification = new NotificationRequest();
+        notification.setTitle("Order Cancellation");
+        notification.setContent("Your order with order code: " + order.getOrderCode() + " has been cancelled.");
+
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found with ID: " + userId));
+
+        notificationService.sendAndSaveNotification(notification, user.getEmail());
 
         Order updatedOrder = orderRepository.save(order);
         log.info("Order ID: {} cancelled successfully by user ID: {}", orderId, userId);
         return OrderMapper.INSTANCE.toInfoResponse(updatedOrder);
     }
 
+    @Transactional
+    @Override
+    public OrderInfoResponse confirmOrder(Long userId, Long orderId) {
+        log.info("User ID: {} attempting to confirm order ID: {}", userId, orderId);
+        Order order = orderRepository.findById(orderId)
+                .orElseThrow(() -> new ResourceNotFoundException("Order not found with ID: " + orderId));
+
+
+        if (order.getOrderStatus() != EOrderStatus.PROCESSING) {
+            log.warn("Order ID: {} cannot be confirmed because its status is {}", orderId, order.getOrderStatus());
+            throw new InvalidActionException("Order cannot be confirmed in its current state: " + order.getOrderStatus());
+        }
+
+        order.setOrderStatus(EOrderStatus.SHIPPING);
+
+        NotificationRequest notification = new NotificationRequest();
+        notification.setTitle("Order Confirmation");
+        notification.setContent("Your order with order code: " + order.getOrderCode() + " has been confirmed.");
+
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found with ID: " + userId));
+
+        notificationService.sendAndSaveNotification(notification, user.getEmail());
+
+        Order updatedOrder = orderRepository.save(order);
+        log.info("Order ID: {} confirmed successfully by user ID: {}", orderId, userId);
+        return OrderMapper.INSTANCE.toInfoResponse(updatedOrder);
+    }
+
+    @Transactional
+    @Override
+    public OrderInfoResponse completeOrder(Long userId, Long orderId) {
+        log.info("User ID: {} attempting to complete order ID: {}", userId, orderId);
+        Order order = orderRepository.findById(orderId)
+                .orElseThrow(() -> new ResourceNotFoundException("Order not found with ID: " + orderId));
+
+        if (order.getOrderStatus() != EOrderStatus.SHIPPING) {
+            log.warn("Order ID: {} cannot be completed because its status is {}", orderId, order.getOrderStatus());
+            throw new InvalidActionException("Order cannot be completed in its current state: " + order.getOrderStatus());
+        }
+
+        order.setOrderStatus(EOrderStatus.COMPLETED);
+
+        addLoyaltyPointsForOrder(order);
+
+        NotificationRequest notification = new NotificationRequest();
+        notification.setTitle("Order Completion");
+        notification.setContent("Your order with order code: " + order.getOrderCode() + " has been completed.");
+
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found with ID: " + userId));
+
+        notificationService.sendAndSaveNotification(notification, user.getEmail());
+
+        Order updatedOrder = orderRepository.save(order);
+        log.info("Order ID: {} completed successfully by user ID: {}", orderId, userId);
+        return OrderMapper.INSTANCE.toInfoResponse(updatedOrder);
+    }
+
     @Override
     @Transactional(readOnly = true)
-    public PageResponse<OrderSummaryResponse> getAllOrdersAdmin(int page, int size, String sort, String direction,
-                                                                EOrderStatus statusFilter, Long userIdFilter,
-                                                                Integer branchIdFilter, String orderCodeFilter) {
+    public PageResponse<OrderInfoResponse> getAllOrdersAdmin(int page, int size, String sort, String direction,
+                                                             EOrderStatus statusFilter, Long userIdFilter,
+                                                             Integer branchIdFilter, String orderCodeFilter) {
         log.info("Admin request: Get all orders with filters - Status: {}, UserID: {}, BranchID: {}, Code: {}",
                 statusFilter, userIdFilter, branchIdFilter, orderCodeFilter);
 
@@ -248,18 +308,17 @@ public class OrderServiceImpl implements OrderService {
                 statusFilter,
                 userIdFilter,
                 branchIdFilter,
-                // Xử lý chuỗi rỗng thành null nếu cần, nếu không query LIKE sẽ tìm ""
                 (orderCodeFilter != null && orderCodeFilter.isBlank()) ? null : orderCodeFilter,
                 pageable
         );
 
-        return PageResponse.<OrderSummaryResponse>builder()
-                .currentPage(page) //
-                .pageSize(size)    //
+        return PageResponse.<OrderInfoResponse>builder()
+                .currentPage(page)
+                .pageSize(size)
                 .totalPages(orderPage.getTotalPages())
                 .totalElements(orderPage.getTotalElements())
                 .content(orderPage.getContent().stream()
-                        .map(OrderMapper.INSTANCE::toSummaryResponse)
+                        .map(OrderMapper.INSTANCE::toInfoResponse)
                         .toList())
                 .build();
     }
@@ -281,7 +340,6 @@ public class OrderServiceImpl implements OrderService {
 
         order.setOrderStatus(newStatus);
 
-        // Trigger các hành động phụ thuộc vào trạng thái mới
         triggerActionsForStatus(order, oldStatus, newStatus, request.getReason());
 
         Order updatedOrder = orderRepository.save(order);
@@ -293,26 +351,22 @@ public class OrderServiceImpl implements OrderService {
     @Transactional(readOnly = true)
     public OrderDetailsResponse getOrderDetailsAdmin(Long orderId) {
         log.info("Admin request: Get details for order ID: {}", orderId);
-        // Dùng lại method fetch join nhưng không cần check userId
         Order order = orderRepository.findOrderWithDetailsById(orderId)
                 .orElseThrow(() -> new ResourceNotFoundException("Order not found with ID: " + orderId));
 
         log.info("Admin retrieved details for order ID: {}", orderId);
-        // Map sang DTO, bao gồm cả thông tin shipment, payment, loyalty nếu có
-        return OrderMapper.INSTANCE.toDetailsResponse(order); // Cần cập nhật Mapper
+        return OrderMapper.INSTANCE.toDetailsResponse(order);
     }
 
     private boolean isValidStatusTransition(EOrderStatus oldStatus, EOrderStatus newStatus) {
         if (oldStatus == newStatus) return true;
 
-        if (oldStatus == EOrderStatus.PENDING) {
-            return newStatus == EOrderStatus.IN_PROGRESS || newStatus == EOrderStatus.CANCELLED;
+        if (oldStatus == EOrderStatus.PROCESSING) {
+            return newStatus == EOrderStatus.SHIPPING || newStatus == EOrderStatus.CANCELLED;
         }
-        if (oldStatus == EOrderStatus.IN_PROGRESS) {
-            // Tùy vào luồng nghiệp vụ của bạn, ví dụ có qua các bước giao hàng không
-            return newStatus == EOrderStatus.COMPLETED || newStatus == EOrderStatus.CANCELLED /* || newStatus == EOrderStatus.OUT_FOR_DELIVERY */;
+        if (oldStatus == EOrderStatus.SHIPPING) {
+            return newStatus == EOrderStatus.COMPLETED || newStatus == EOrderStatus.CANCELLED;
         }
-        // Đơn đã COMPLETED hoặc CANCELLED thì không đổi được nữa
         if (oldStatus == EOrderStatus.COMPLETED || oldStatus == EOrderStatus.CANCELLED) {
             return false;
         }
@@ -322,40 +376,85 @@ public class OrderServiceImpl implements OrderService {
     private void triggerActionsForStatus(Order order, EOrderStatus oldStatus, EOrderStatus newStatus, String reason) {
         if (oldStatus == newStatus) return;
 
-        // Ví dụ: Khi đơn hàng hoàn thành (COMPLETED)
         if (newStatus == EOrderStatus.COMPLETED) {
             log.debug("Order ID: {} completed. Triggering post-completion actions.", order.getId());
-            // Cộng điểm Loyalty
-            // completeLoyaltyTransaction(order);
-            // Cập nhật trạng thái Shipment cuối cùng (DELIVERED)
-            // updateFinalShipmentStatus(order);
-            // Gửi thông báo hoàn thành cho user
-            // sendCompletionNotification(order);
+            // Tích điểm thưởng khi đơn hàng hoàn tất
+            addLoyaltyPointsForOrder(order);
         }
-        // Ví dụ: Khi đơn hàng bị hủy (CANCELLED)
         else if (newStatus == EOrderStatus.CANCELLED) {
             log.debug("Order ID: {} cancelled. Triggering cancellation actions. Reason: {}", order.getId(), reason);
-            // Hoàn điểm Loyalty nếu cần
-            // handleLoyaltyPointReversalOnCancel(order);
-            // Hủy thanh toán đang chờ
-            // cancelPendingPayments(order);
-            // Cập nhật trạng thái Shipment (FAILED_ATTEMPT hoặc tương tự)
-            // updateShipmentOnCancel(order);
-            // Gửi thông báo hủy cho user
-            // sendCancellationNotification(order, reason);
         }
-        // Ví dụ: Khi đơn hàng bắt đầu xử lý (IN_PROGRESS)
-        else if (newStatus == EOrderStatus.IN_PROGRESS && oldStatus == EOrderStatus.PENDING) {
-            log.debug("Order ID: {} is now IN_PROGRESS. Triggering preparation actions.", order.getId());
-            // Tạo Shipment record (nếu chưa có)
-            // createInitialShipment(order);
-            // Gửi thông báo xác nhận/bắt đầu chuẩn bị cho user
-            // sendProcessingNotification(order);
+        else if (newStatus == EOrderStatus.SHIPPING && oldStatus == EOrderStatus.PROCESSING) {
+            log.debug("Order ID: {} is now SHIPPING. Triggering preparation actions.", order.getId());
         }
-        // Thêm các xử lý cho trạng thái khác (OUT_FOR_DELIVERY, ...)
     }
 
-    // Hàm helper để xóa giỏ hàng một cách an toàn
+    private void addLoyaltyPointsForOrder(Order order) {
+        log.debug("Calculating loyalty points for Order ID: {}", order.getId());
+        User user = order.getUser();
+        BigDecimal totalPrice = order.getTotalPrice();
+
+        if (totalPrice == null || totalPrice.compareTo(BigDecimal.ZERO) <= 0) {
+            log.warn("Order ID: {} has invalid total price: {}. Skipping loyalty points.", order.getId(), totalPrice);
+            // Gửi thông báo hoàn thành đơn hàng mà không có điểm thưởng
+            NotificationRequest notification = new NotificationRequest();
+            notification.setTitle("Order Completed");
+            notification.setContent("Your order with order code: " + order.getOrderCode() + " has been completed.");
+            notificationService.sendAndSaveNotification(notification, user.getEmail());
+            return;
+        }
+
+        // Tính số điểm thưởng: 1 điểm cho mỗi 100.000 VNĐ
+        BigDecimal pointsEarnedBigDecimal = totalPrice.divide(POINT_RATE, 0, BigDecimal.ROUND_DOWN);
+        int pointsEarned = pointsEarnedBigDecimal.intValue();
+
+        // Gửi thông báo hoàn thành đơn hàng (luôn gửi, kể cả khi không có điểm)
+        NotificationRequest notification = new NotificationRequest();
+        notification.setTitle("Order Completed");
+        StringBuilder content = new StringBuilder("Your order with order code: " + order.getOrderCode() + " has been completed.");
+
+        if (pointsEarned <= 0) {
+            log.debug("Order ID: {} total price {} is too low to earn points.", order.getId(), totalPrice);
+            notificationService.sendAndSaveNotification(notification, user.getEmail());
+            log.debug("Sent notification for order completion without loyalty points for Order ID: {}", order.getId());
+            return;
+        }
+
+        // Kiểm tra xem đã tích điểm cho đơn hàng này chưa
+        boolean alreadyEarned = loyaltyPointTransactionRepository.existsByOrder_Id(order.getId());
+        if (alreadyEarned) {
+            log.warn("Loyalty points already earned for Order ID: {}. Skipping.", order.getId());
+            notificationService.sendAndSaveNotification(notification, user.getEmail());
+            log.debug("Sent notification for order completion without new loyalty points for Order ID: {}", order.getId());
+            return;
+        }
+
+        // Tạo giao dịch điểm thưởng
+        LoyaltyPointTransaction transaction = LoyaltyPointTransaction.builder()
+                .user(user)
+                .order(order)
+                .pointsChange(pointsEarned)
+                .transactionType(ELoyaltyTransactionType.EARNED)
+                .description("Earned " + pointsEarned + " points from order #" + order.getOrderCode())
+                .build();
+
+        loyaltyPointTransactionRepository.save(transaction);
+        log.debug("Saved loyalty point transaction for Order ID: {}. Points: {}", order.getId(), pointsEarned);
+
+        // Cập nhật số dư điểm thưởng của người dùng
+        Integer currentBalance = user.getLoyaltyPointsBalance();
+        int newBalance = (currentBalance != null ? currentBalance : 0) + pointsEarned;
+        user.setLoyaltyPointsBalance(newBalance);
+        userRepository.save(user);
+        log.debug("Updated loyalty points balance for User ID: {}. New balance: {}", user.getId(), newBalance);
+
+        // Thêm thông tin điểm thưởng vào nội dung thông báo
+        content.append(" You have earned ").append(pointsEarned).append(" loyalty points.");
+        notification.setContent(content.toString());
+        notificationService.sendAndSaveNotification(notification, user.getEmail());
+        log.debug("Sent notification for order completion with loyalty points for Order ID: {}", order.getId());
+    }
+
     private void clearCartItemsAfterOrder(Cart cart, Long userId, Long orderId) {
         if (cart == null || cart.getCartItems() == null || cart.getCartItems().isEmpty()) {
             return;
@@ -365,7 +464,6 @@ public class OrderServiceImpl implements OrderService {
             List<Long> cartItemOptionIdsToDelete = new ArrayList<>();
             List<Long> cartItemIdsToDelete = new ArrayList<>();
 
-            // Thu thập ID cần xóa
             for (CartItem cartItem : cart.getCartItems()) {
                 cartItemIdsToDelete.add(cartItem.getId());
                 if (cartItem.getCartItemOptions() != null) {
@@ -373,7 +471,6 @@ public class OrderServiceImpl implements OrderService {
                 }
             }
 
-            // Thực hiện xóa (Option trước)
             if (!cartItemOptionIdsToDelete.isEmpty()) {
                 cartItemOptionRepository.deleteAllByIdInBatch(cartItemOptionIdsToDelete);
                 log.debug("Deleted {} cart item options.", cartItemOptionIdsToDelete.size());
@@ -384,7 +481,6 @@ public class OrderServiceImpl implements OrderService {
             }
             log.info("Cleared cart for user ID: {} after successful order creation (Order ID: {}).", userId, orderId);
         } catch (Exception e) {
-            // Log lỗi nhưng không rollback transaction của đơn hàng
             log.error("Error clearing cart for user ID: {} after creating order ID: {}. Error: {}", userId, orderId, e.getMessage(), e);
         }
     }

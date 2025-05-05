@@ -19,6 +19,9 @@ import vn.edu.hcmute.foodapp.repository.MenuItemRepository;
 import vn.edu.hcmute.foodapp.service.MenuCategoryService;
 import vn.edu.hcmute.foodapp.util.PaginationUtil;
 
+import java.util.List;
+import java.util.stream.Collectors;
+
 @Service
 @RequiredArgsConstructor
 @Slf4j
@@ -76,6 +79,12 @@ public class MenuCategoryServiceImpl implements MenuCategoryService {
                 .totalElements(menuCategoryPage.getTotalElements())
                 .content(menuCategoryPage.getContent().stream().map(MenuCategoryMapper.INSTANCE::toResponse).toList())
                 .build();
+    }
+
+    @Override
+    public List<MenuCategoryResponse> getAllMenuCategories() {
+        log.info("Fetching all menu categories");
+        return menuCategoryRepository.findAll().stream().map(MenuCategoryMapper.INSTANCE::toResponse).toList();
     }
 
     @Override

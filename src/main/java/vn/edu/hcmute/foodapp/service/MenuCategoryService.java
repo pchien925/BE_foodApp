@@ -5,6 +5,8 @@ import vn.edu.hcmute.foodapp.dto.response.MenuCategoryResponse;
 import vn.edu.hcmute.foodapp.dto.response.MenuItemResponse;
 import vn.edu.hcmute.foodapp.dto.response.PageResponse;
 
+import java.util.List;
+
 public interface MenuCategoryService {
     MenuCategoryResponse createMenuCategory(MenuCategoryRequest request);
 
@@ -17,4 +19,6 @@ public interface MenuCategoryService {
     PageResponse<MenuCategoryResponse> getMenuCategories(int page, int size, String sort, String direction);
 
     PageResponse<MenuItemResponse> getMenuItemsByMenuCategoryId(Integer menuCategoryId, int page, int size, String sort, String direction);
+
+    List<MenuCategoryResponse> getAllMenuCategories();
 }

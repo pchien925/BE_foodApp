@@ -3,6 +3,7 @@ package vn.edu.hcmute.foodapp.dto.response;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.Setter;
+import vn.edu.hcmute.foodapp.util.enumeration.EOrderStatus;
 import vn.edu.hcmute.foodapp.util.enumeration.EPaymentMethod;
 
 import java.math.BigDecimal;
@@ -17,11 +18,9 @@ public class OrderDetailsResponse {
 
     private String orderCode;
 
+    private EOrderStatus orderStatus;
+
     private BigDecimal totalPrice;
-
-    private LocalDateTime createdAt;
-
-    private LocalDateTime updatedAt;
 
     private String note;
 
@@ -29,15 +28,17 @@ public class OrderDetailsResponse {
 
     private EPaymentMethod paymentMethod;
 
-    private UserInfoResponse userInfo;
+    private UserInfoResponse user;
 
-    private BranchInfoResponse branchInfo;
+    private BranchInfoResponse branch;
 
     private Set<OrderItemResponse> items;
 
-    private Set<PaymentInfoResponse> paymentInfos;
+    private Set<PaymentInfoResponse> payments;
 
-    private Integer pointsEarnedOrSpent;
+    private ShipmentDetailResponse shipments;
 
-    private String loyaltyTransactionDescription;
+    private LocalDateTime createdAt;
+
+    private LocalDateTime updatedAt;
 }

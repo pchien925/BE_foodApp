@@ -10,7 +10,7 @@ import vn.edu.hcmute.foodapp.dto.response.VerifyOtpResponse;
 public interface AuthenticationService {
     TokenResponse signIn(SignInRequest request);
 
-    TokenResponse refreshToken(String refreshToken);
+    TokenResponse refreshToken(RefreshTokenRequest refreshToken);
 
     UserResponse signUp(SignUpRequest request);
 

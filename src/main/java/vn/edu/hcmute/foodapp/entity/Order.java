@@ -20,12 +20,12 @@ public class Order extends AbstractEntity<Long>{
     @Column(name = "order_code", unique = true)
     private String orderCode;
 
-    @ManyToOne
-    @JoinColumn(name = "user_id", referencedColumnName = "id")
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "user_id", referencedColumnName = "id", nullable = false)
     private User user;
 
-    @ManyToOne
-    @JoinColumn(name = "branch_id", referencedColumnName = "id")
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "branch_id", referencedColumnName = "id", nullable = false)
     private Branch branch;
 
     @Column(name = "shipping_address")
@@ -42,21 +42,20 @@ public class Order extends AbstractEntity<Long>{
     @Enumerated(EnumType.STRING)
     private EOrderStatus orderStatus;
 
-    @Column(name = "total_price", precision = 10, scale = 2)
+    @Column(name = "total_price", precision = 10, scale = 2, nullable = false)
     private BigDecimal totalPrice;
 
     @OneToMany(mappedBy = "order", cascade = CascadeType.ALL)
     @Builder.Default
     private Set<OrderItem> orderItems = new HashSet<>();
 
-    @OneToMany(mappedBy = "order", cascade = CascadeType.ALL)
-    @Builder.Default
-    private Set<Shipment> shipments = new HashSet<>();
+    @OneToOne(mappedBy = "order", cascade = CascadeType.ALL, orphanRemoval = true)
+    private Shipment shipment;
 
-    @OneToMany(mappedBy = "order", cascade = CascadeType.ALL)
+    @OneToMany(mappedBy = "order", cascade = CascadeType.ALL, orphanRemoval = true)
     @Builder.Default
     private Set<Payment> payments = new HashSet<>();
 
-    @OneToOne(mappedBy = "order", cascade = CascadeType.ALL)
+    @OneToOne(mappedBy = "order", cascade = CascadeType.ALL, orphanRemoval = true)
     private LoyaltyPointTransaction loyaltyTransaction;
 }

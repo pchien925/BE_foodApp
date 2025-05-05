@@ -19,7 +19,7 @@ public class AdminOrderController {
     private final OrderService orderService;
 
     @GetMapping
-    public ResponseData<PageResponse<OrderSummaryResponse>> getAllOrders(
+    public ResponseData<PageResponse<OrderInfoResponse>> getAllOrders(
             @RequestParam(defaultValue = "1") int page,
             @RequestParam(defaultValue = "10") int size,
             @RequestParam(defaultValue = "createdAt") String sort,
@@ -32,9 +32,9 @@ public class AdminOrderController {
     ) {
         log.info("Admin/Staff request: Get all orders with filters. Page: {}, Size: {}, Status: {}, User: {}, Branch: {}, Code: {}",
                 page, size, statusFilter, userIdFilter, branchIdFilter, orderCodeFilter);
-        PageResponse<OrderSummaryResponse> orderPage = orderService.getAllOrdersAdmin(
+        PageResponse<OrderInfoResponse> orderPage = orderService.getAllOrdersAdmin(
                 page, size, sort, direction, statusFilter, userIdFilter, branchIdFilter, orderCodeFilter);
-        return ResponseData.<PageResponse<OrderSummaryResponse>>builder()
+        return ResponseData.<PageResponse<OrderInfoResponse>>builder()
                 .data(orderPage)
                 .message("Admin orders retrieved successfully")
                 .build();
@@ -59,6 +59,32 @@ public class AdminOrderController {
         return ResponseData.<OrderInfoResponse>builder()
                 .data(updatedOrder)
                 .message("Order status updated successfully by admin/staff")
+                .build();
+    }
+
+    @PatchMapping("/{id}/confirm")
+    public ResponseData<OrderInfoResponse> confirmOrder(
+            @PathVariable Long id,
+            @RequestParam Long userId)
+    {
+        log.info("Admin/Staff request: Confirm order ID: {} by user ID: {}", id, userId);
+        OrderInfoResponse confirmedOrder = orderService.confirmOrder(userId, id);
+        return ResponseData.<OrderInfoResponse>builder()
+                .data(confirmedOrder)
+                .message("Order confirmed successfully by admin/staff")
+                .build();
+    }
+
+    @PatchMapping("/{id}/complete")
+    public ResponseData<OrderInfoResponse> completeOrder(
+            @PathVariable Long id,
+            @RequestParam Long userId)
+    {
+        log.info("Admin/Staff request: Complete order ID: {} by user ID: {}", id, userId);
+        OrderInfoResponse completedOrder = orderService.completeOrder(userId, id);
+        return ResponseData.<OrderInfoResponse>builder()
+                .data(completedOrder)
+                .message("Order completed successfully by admin/staff")
                 .build();
     }
 }

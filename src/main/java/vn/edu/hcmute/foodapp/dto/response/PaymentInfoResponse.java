@@ -17,7 +17,7 @@ public class PaymentInfoResponse {
 
     private EPaymentMethod paymentMethod;
 
-    private EPaymentStatus paymentStatus;
+    private EPaymentStatus status;
 
     private BigDecimal amount;
 

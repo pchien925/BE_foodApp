@@ -24,6 +24,7 @@ public class LoyaltyPointTransaction extends AbstractEntity<Long>{
     private Integer pointsChange;
 
     @Column(name = "transaction_type")
+    @Enumerated(EnumType.STRING)
     private ELoyaltyTransactionType transactionType;
 
     @Column(name = "description")

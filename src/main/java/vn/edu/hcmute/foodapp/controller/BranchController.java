@@ -14,6 +14,8 @@ import vn.edu.hcmute.foodapp.dto.response.PageResponse;
 import vn.edu.hcmute.foodapp.dto.response.ResponseData;
 import vn.edu.hcmute.foodapp.service.BranchService;
 
+import java.util.List;
+
 
 @RestController
 @RequestMapping("/api/v1/branches")
@@ -66,6 +68,17 @@ public class BranchController {
         return ResponseData.<Void>builder()
                 .status(HttpStatus.NO_CONTENT.value())
                 .message("Branch deleted successfully")
+                .build();
+    }
+
+    @GetMapping("/all")
+    @Operation(summary = "Get all branches", description = "Retrieve a list of all branches")
+    public ResponseData<List<BranchDetailsResponse>> getAllBranches() {
+        log.info("Get all branches request");
+        return ResponseData.<List<BranchDetailsResponse>>builder()
+                .status(HttpStatus.OK.value())
+                .message("Branches retrieved successfully")
+                .data(branchService.getAllBranches())
                 .build();
     }
 

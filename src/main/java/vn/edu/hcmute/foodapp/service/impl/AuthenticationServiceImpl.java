@@ -79,18 +79,18 @@ public class AuthenticationServiceImpl implements AuthenticationService {
     }
 
     @Override
-    public TokenResponse refreshToken(String refreshToken) {
+    public TokenResponse refreshToken(RefreshTokenRequest request) {
         log.info("Get new access token");
 
-        String email = jwtService.extractUsername(refreshToken, ETokenType.REFRESH_TOKEN);
+        String email = jwtService.extractUsername(request.getRefreshToken(), ETokenType.REFRESH_TOKEN);
         User user = userRepository.findByEmail(email).orElseThrow(() -> new AccessDeniedException("User not found"));
 
         String storedRefreshToken = (String) redisService.get("refresh:" + user.getEmail());
-        if (storedRefreshToken == null || !storedRefreshToken.equals(refreshToken)) {
+        if (storedRefreshToken == null || !storedRefreshToken.equals(request.getRefreshToken())) {
             throw new AccessDeniedException("Invalid or revoked refresh token");
         }
 
-        if (!jwtService.isValid(refreshToken, ETokenType.REFRESH_TOKEN, user)) {
+        if (!jwtService.isValid(request.getRefreshToken(), ETokenType.REFRESH_TOKEN, user)) {
             throw new AccessDeniedException("Invalid refresh token");
         }
 
@@ -98,7 +98,7 @@ public class AuthenticationServiceImpl implements AuthenticationService {
 
         return TokenResponse.builder()
                 .accessToken(newAccessToken)
-                .refreshToken(refreshToken)
+                .refreshToken(request.getRefreshToken())
                 .userId(user.getId())
                 .build();
     }
